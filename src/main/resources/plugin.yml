@@ -1,0 +1,31 @@
+main: com.cavetale.buildmything.BuildMyThingPlugin
+name: BuildMyThing
+
+version: ${version}
+api-version: '1.21'
+
+author: StarTux
+website: https://github.com/StarTux/BuildMyThing
+description: BuildMyThing Plugin
+
+depend:
+- Core
+- VoidGenerator
+- Creative
+
+softdepend: []
+
+commands:
+
+  buildmything:
+    aliases: []
+    description: BuildMyThing Command
+    permission: buildmything.buildmything
+    usage: |-
+      /buildmything
+
+permissions:
+
+  buildmything.buildmything:
+    description: Use /buildmything
+    default: op
