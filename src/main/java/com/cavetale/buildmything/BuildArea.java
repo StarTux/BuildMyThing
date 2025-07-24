@@ -161,7 +161,7 @@ public final class BuildArea {
     public void bringViewer(Player player) {
         final Vec3d origin = area.getCenterExact();
         final double angle = ThreadLocalRandom.current().nextDouble() * 2.0 * Math.PI;
-        final double radius = Math.sqrt(area.getSizeX() * area.getSizeX() + area.getSizeZ() + area.getSizeZ());
+        final double radius = 4.0 + 0.5 * Math.sqrt(area.getSizeX() * area.getSizeX() + area.getSizeZ() + area.getSizeZ());
         final Vec3d playerVector = origin.add(Math.cos(angle) * radius,
                                               0.0,
                                               Math.sin(angle) * radius);
