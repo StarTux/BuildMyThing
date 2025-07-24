@@ -5,6 +5,7 @@ import com.cavetale.buildmything.GamePlayer;
 import com.cavetale.buildmything.phase.BuildPhase;
 import com.cavetale.buildmything.phase.CountdownPhase;
 import com.cavetale.buildmything.phase.GamePhase;
+import com.cavetale.buildmything.phase.PausePhase;
 import com.cavetale.buildmything.phase.RankingPhase;
 import com.cavetale.buildmything.phase.RatePhase;
 import com.cavetale.buildmything.phase.TimedPhase;
@@ -51,6 +52,7 @@ public final class BuildBattleMode implements GameplayMode {
         stateMap.put(State.WARP, new WarpPlayerToBuildAreaPhase(game));
         stateMap.put(State.COUNTDOWN, new CountdownPhase(game, Duration.ofSeconds(10)));
         stateMap.put(State.BUILD, new BuildPhase(game, Duration.ofMinutes(3)));
+        stateMap.put(State.POST_BUILD, new PausePhase(Duration.ofSeconds(5)));
         stateMap.put(State.RATE, new RatePhase(game, Duration.ofSeconds(60)));
         stateMap.put(State.RANKING, new RankingPhase(game));
         itemName = game.getPlugin().getWordList().randomWord();
@@ -77,7 +79,7 @@ public final class BuildBattleMode implements GameplayMode {
             for (GamePlayer gp : game.getAllGamePlayers()) {
                 if (gp.getBuildArea() == null) continue;
                 gp.getBuildArea().removeFrame();
-                gp.getBuildArea().removeOutline();
+                gp.getBuildArea().createTextLabel(text(itemName, GOLD));
             }
             break;
         default: break;
@@ -115,9 +117,15 @@ public final class BuildBattleMode implements GameplayMode {
         if (state == State.INIT) throw new IllegalStateException("state=INIT");
         final GamePhase currentPhase = stateMap.get(state);
         currentPhase.tick();
-        if (currentPhase instanceof TimedPhase timedPhase) {
+        if (currentPhase instanceof PausePhase) {
+            seconds = -1;
+            progress = 1f;
+        } else if (currentPhase instanceof TimedPhase timedPhase) {
             seconds = timedPhase.getSecondsRemaining();
             progress = timedPhase.getProgress();
+        } else {
+            seconds = -1;
+            progress = 1f;
         }
         if (currentPhase.isFinished()) {
             setState(state.next());
@@ -132,14 +140,20 @@ public final class BuildBattleMode implements GameplayMode {
 
     @Override
     public void onPlayerSidebar(Player player, List<Component> sidebar) {
-        sidebar.add(textOfChildren(text(tiny("time "), DARK_GRAY),
-                                   text(seconds, GREEN)));
+        if (seconds >= 0) {
+            sidebar.add(textOfChildren(text(tiny("time "), DARK_GRAY),
+                                       text(seconds, GREEN)));
+        }
         if (revealItemName) {
             sidebar.add(textOfChildren(text(tiny("item "), DARK_GRAY),
                                        text(itemName, GREEN)));
         } else {
             sidebar.add(textOfChildren(text(tiny("item "), DARK_GRAY),
                                        text("???", DARK_GREEN)));
+        }
+        if (state == State.RANKING && stateMap.get(State.RANKING) instanceof RankingPhase phase) {
+            sidebar.add(empty());
+            sidebar.addAll(phase.getSidebar());
         }
     }
 
@@ -148,6 +162,10 @@ public final class BuildBattleMode implements GameplayMode {
         switch (state) {
         case BUILD:
             return BossBar.bossBar(text(itemName, GREEN), progress, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+        case RATE:
+            return BossBar.bossBar(text("Rate my Build", BLUE), progress, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
+        case RANKING:
+            return BossBar.bossBar(text("The winner is...", GOLD), 1f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
         default:
             return null;
         }
@@ -166,6 +184,7 @@ public final class BuildBattleMode implements GameplayMode {
         WARP,
         COUNTDOWN,
         BUILD,
+        POST_BUILD,
         RATE,
         RANKING,
         ;

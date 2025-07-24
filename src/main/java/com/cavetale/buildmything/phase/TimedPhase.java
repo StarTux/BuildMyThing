@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * This is a useful type of phase which has a timer.  It runs for a
@@ -13,12 +12,12 @@ import lombok.Setter;
  */
 @Getter
 @RequiredArgsConstructor
-public class TimedPhase implements GamePhase {
+public abstract class TimedPhase implements GamePhase {
     private final Duration duration;
     private long secondsRemaining;
     private Instant startTime;
     private Instant stopTime;
-    @Setter private boolean finished;
+    private boolean finished;
     private float progress;
 
     /**
@@ -43,7 +42,7 @@ public class TimedPhase implements GamePhase {
         final long newSecondsRemaining = timeRemaining.toSeconds();
         progress = 1f - ((float) timeRemaining.toMillis() / (float) duration.toMillis());
         if (newSecondsRemaining <= 0L) {
-            finished = true;
+            setFinished(true);
         }
         if (newSecondsRemaining != secondsRemaining) {
             secondsRemaining = newSecondsRemaining;
@@ -55,4 +54,19 @@ public class TimedPhase implements GamePhase {
      * This method can be override to a change to the timer.
      */
     public void onSecondsRemainingChanged() { }
+
+    /**
+     * Set the finished state.
+     */
+    public void setFinished(boolean value) {
+        finished = value;
+        if (value) {
+            onFinished();
+        }
+    }
+
+    /**
+     * Hook for when finished is set to true.
+     */
+    public void onFinished() { }
 }

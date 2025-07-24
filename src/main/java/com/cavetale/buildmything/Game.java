@@ -21,6 +21,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.GameRule;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
@@ -69,6 +70,14 @@ public final class Game {
         return gamePlayer;
     }
 
+    public GamePlayer addSpectator(Player player) {
+        plugin.getLogger().info("[" + name + "] Adding spectator: " + player.getName());
+        final GamePlayer gamePlayer = new GamePlayer(player);
+        gamePlayer.setPlaying(false);
+        players.put(gamePlayer.getUuid(), gamePlayer);
+        return gamePlayer;
+    }
+
     public GamePlayer getGamePlayer(UUID uuid) {
         return players.get(uuid);
     }
@@ -83,7 +92,7 @@ public final class Game {
     }
 
     public void enable() {
-        world = createWorld();
+        createWorld();
         if (mode == null) {
             mode = GameplayType.random().createGameplayMode();
         }
@@ -112,7 +121,7 @@ public final class Game {
         }
     }
 
-    private World createWorld() {
+    private void createWorld() {
         String worldName;
         int suffix = 0;
         do {
@@ -127,7 +136,11 @@ public final class Game {
         creator.type(WorldType.NORMAL);
         creator.keepSpawnLoaded(TriState.FALSE);
         regionAllocator = new RegionAllocator(this, 512);
-        return creator.createWorld();
+        world = creator.createWorld();
+        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true);
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+        world.setTime(6000L);
+        world.setPVP(false);
     }
 
     /**
@@ -221,9 +234,27 @@ public final class Game {
     }
 
     public void calculateAllRatings() {
-        for (GamePlayer gp : getPlayingGamePlayers()) {
+        // Calculate average rating given of all players
+        final Map<UUID, Double> ratingGiven = new HashMap<>();
+        final Map<UUID, Integer> timesRated = new HashMap<>();
+        for (GamePlayer gp : players.values()) {
             if (gp.getBuildArea() == null) continue;
-            gp.getBuildArea().calculateRating();
+            for (Map.Entry<UUID, Integer> entry : gp.getBuildArea().getRatings().entrySet()) {
+                final UUID uuid = entry.getKey();
+                final int value = entry.getValue();
+                ratingGiven.put(uuid, ratingGiven.getOrDefault(uuid, 0.0) + (double) value);
+                timesRated.put(uuid, timesRated.getOrDefault(uuid, 0) + 1);
+            }
+        }
+        // Calculate average
+        for (UUID uuid : timesRated.keySet()) {
+            ratingGiven.put(uuid, ratingGiven.getOrDefault(uuid, 0.0) / (double) timesRated.getOrDefault(uuid, 1));
+        }
+        plugin.getLogger().info("[" + name + "] average ratings: " + ratingGiven);
+        // Call it
+        for (GamePlayer gp : players.values()) {
+            if (gp.getBuildArea() == null) continue;
+            gp.getBuildArea().calculateRating(ratingGiven);
         }
     }
 }

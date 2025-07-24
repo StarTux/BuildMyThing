@@ -3,6 +3,7 @@ package com.cavetale.buildmything.phase;
 import com.cavetale.buildmything.BuildArea;
 import com.cavetale.buildmything.Game;
 import com.cavetale.buildmything.GamePlayer;
+import com.cavetale.mytems.item.font.Glyph;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public final class RankingPhase implements GamePhase {
     private BuildArea currentBuildArea;
     private int buildAreaIndex;
     private Instant endTime;
+    private List<Component> sidebar;
 
     public RankingPhase(final Game game) {
         this.game = game;
@@ -38,12 +40,13 @@ public final class RankingPhase implements GamePhase {
     @Override
     public void start() {
         buildAreas = new ArrayList<>();
-        for (GamePlayer gp : game.getPlayingGamePlayers()) {
+        for (GamePlayer gp : game.getPlayers().values()) {
             if (gp.getBuildArea() == null) continue;
             buildAreas.add(gp.getBuildArea());
         }
         buildAreas.sort(Comparator.comparing(BuildArea::getFinalRating));
         buildAreaIndex = -1;
+        sidebar = new ArrayList<>();
     }
 
     @Override
@@ -58,15 +61,17 @@ public final class RankingPhase implements GamePhase {
         endTime = now.plus(Duration.ofSeconds(20));
         currentBuildArea = buildAreas.get(buildAreaIndex);
         final int rank = buildAreas.size() - buildAreaIndex;
-        final Title title = Title.title(text("#" + rank, GOLD),
+        final Component rankNumber = Glyph.toComponent("" + rank);
+        final Title title = Title.title(rankNumber,
                                         text(currentBuildArea.getOwningPlayer().getName(), BLUE),
                                         times(Duration.ofSeconds(2),
                                               Duration.ofSeconds(3),
                                               Duration.ofSeconds(1)));
-        final Component message = textOfChildren(text("#" + rank, GOLD),
+        final Component message = textOfChildren(rankNumber,
                                                  text(" " + currentBuildArea.getOwningPlayer().getName(), BLUE));
+        sidebar.add(0, message);
         for (Player player : game.getOnlinePlayers()) {
-            currentBuildArea.bring(player);
+            currentBuildArea.bringViewer(player);
             player.setGameMode(GameMode.SPECTATOR);
             player.setAllowFlight(true);
             player.setFlying(true);

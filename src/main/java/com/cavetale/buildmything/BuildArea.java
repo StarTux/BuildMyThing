@@ -9,17 +9,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Chunk;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.util.Transformation;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 import static com.cavetale.buildmything.BuildMyThingPlugin.buildMyThingPlugin;
 
 @Data
@@ -27,10 +35,13 @@ import static com.cavetale.buildmything.BuildMyThingPlugin.buildMyThingPlugin;
 public final class BuildArea {
     private final GameRegion region; // game, world
     private final Cuboid area;
-    private final List<Block> frameBlocks = new ArrayList<>();
-    private CuboidOutline outline;
     private GamePlayer owningPlayer;
     private boolean chunksLoaded;
+    // Framing
+    private final List<Block> frameBlocks = new ArrayList<>();
+    private CuboidOutline outline;
+    private TextDisplay textLabel;
+    // Rating
     private Map<UUID, Integer> ratings = new HashMap<>();
     private double finalRating;
 
@@ -46,8 +57,8 @@ public final class BuildArea {
         final List<Vec2i> chunkVectorList = area.blockToChunk().enumerateHorizontally();
         final List<Chunk> chunkList = new ArrayList<>();
         for (Vec2i chunkVector : chunkVectorList) {
-            chunksLoaded = true;
             getWorld().getChunkAtAsync(chunkVector.x, chunkVector.z, (Consumer<Chunk>) chunk -> {
+                    chunksLoaded = true;
                     chunk.addPluginChunkTicket(buildMyThingPlugin());
                     chunkList.add(chunk);
                     if (chunkList.size() >= chunkVectorList.size()) {
@@ -105,12 +116,33 @@ public final class BuildArea {
         outline = null;
     }
 
+    public void createTextLabel(Component label) {
+        final Location location = area.getFaceCenterExact(BlockFace.UP).add(0.0, 1.0, 0.0).toLocation(region.getGame().getWorld());
+        textLabel = location.getWorld().spawn(location, TextDisplay.class, e -> {
+                e.text(label);
+                e.setShadowed(true);
+                e.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+                e.setBillboard(TextDisplay.Billboard.VERTICAL);
+                final float scale = 4f;
+                e.setTransformation(new Transformation(new Vector3f(0f, 0f, 0f),
+                                                       new AxisAngle4f(0f, 0f, 0f, 0f),
+                                                       new Vector3f(scale, scale, scale),
+                                                       new AxisAngle4f(0f, 0f, 0f, 0f)));
+            });
+    }
+
+    public void removeTextLabel() {
+        if (textLabel == null) return;
+        textLabel.remove();
+        textLabel = null;
+    }
+
     /**
      * Teleport the player so they can nicely overlook the given build
      * area.  This corresponds with outlineArea in a way that the
      * outline does not obfuscate this viewpoint.
      */
-    public void bring(Player player) {
+    public void bringBuilder(Player player) {
         final Vec3d origin = area.getCenterExact();
         final Vec3d playerVector = origin.add(0.0, 0.0, (area.getSizeZ() / 2) + 4);
         final Location location = playerVector.toLocation(getWorld());
@@ -126,7 +158,27 @@ public final class BuildArea {
         player.setFlying(true);
     }
 
-    public void calculateRating() {
+    public void bringViewer(Player player) {
+        final Vec3d origin = area.getCenterExact();
+        final double angle = ThreadLocalRandom.current().nextDouble() * 2.0 * Math.PI;
+        final double radius = Math.sqrt(area.getSizeX() * area.getSizeX() + area.getSizeZ() + area.getSizeZ());
+        final Vec3d playerVector = origin.add(Math.cos(angle) * radius,
+                                              0.0,
+                                              Math.sin(angle) * radius);
+        final Location location = playerVector.toLocation(getWorld());
+        location.setDirection(origin.subtract(playerVector).toVector());
+        player.eject();
+        player.leaveVehicle();
+        player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            player.removePotionEffect(effect.getType());
+        }
+        player.teleport(location);
+        player.setAllowFlight(true);
+        player.setFlying(true);
+    }
+
+    public void calculateRating(final Map<UUID, Double> averageRating) {
         if (ratings.isEmpty()) {
             return;
         }
@@ -134,6 +186,6 @@ public final class BuildArea {
         for (int r : ratings.values()) {
             total += r;
         }
-        finalRating = ((double) total) / ((double) ratings.size());
+        finalRating = ((double) total) / ((double) ratings.size()) * averageRating.getOrDefault(owningPlayer.getUuid(), 1.0);
     }
 }

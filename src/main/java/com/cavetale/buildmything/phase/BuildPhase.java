@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -36,14 +37,15 @@ public final class BuildPhase extends TimedPhase {
             for (int i = 0; i < initialInventory.size(); i += 1) {
                 player.getInventory().setItem(i, new ItemStack(initialInventory.get(i)));
             }
+            player.playSound(player, Sound.ENTITY_FIREWORK_ROCKET_LARGE_BLAST, 1f, 1f);
         }
     }
 
     @Override
-    public void tick() {
-        super.tick();
-        if (isFinished()) {
-            game.setBuildingAllowed(false);
+    public void onFinished() {
+        game.setBuildingAllowed(false);
+        for (Player player : game.getOnlinePlayers()) {
+            player.playSound(player, Sound.BLOCK_NOTE_BLOCK_BELL, 1f, 0.5f);
         }
     }
 }

@@ -28,7 +28,7 @@ public final class WarpPlayerToBuildAreaPhase implements GamePhase {
                     waiting -= 1;
                     final Player player = gp.getPlayer();
                     if (player != null) {
-                        buildArea.bring(player);
+                        buildArea.bringBuilder(player);
                         player.setGameMode(GameMode.CREATIVE);
                     }
                 });

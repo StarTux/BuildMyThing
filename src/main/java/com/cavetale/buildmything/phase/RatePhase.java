@@ -81,11 +81,10 @@ public final class RatePhase extends TimedPhase {
             pendingPlayers.remove(gp.getUuid());
             if (pendingPlayers.isEmpty()) {
                 setFinished(true);
-                game.calculateAllRatings();
             }
             return;
         }
-        gp.getRatePlayerList().get(gp.getRateIndex()).getBuildArea().bring(player);
+        gp.getRatePlayerList().get(gp.getRateIndex()).getBuildArea().bringViewer(player);
         player.setGameMode(GameMode.SPECTATOR);
         player.sendMessage(empty());
         player.sendMessage(textOfChildren(Mytems.MOUSE_LEFT, text(" Click Here to Rate this Build", GREEN, BOLD))
@@ -158,5 +157,10 @@ public final class RatePhase extends TimedPhase {
             gp.setRateIndex(gp.getRateIndex() + 1);
             teleportPlayer(gp);
         }
+    }
+
+    @Override
+    public void onFinished() {
+        game.calculateAllRatings();
     }
 }
