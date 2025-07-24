@@ -30,7 +30,7 @@ import static net.kyori.adventure.title.Title.Times.times;
  *
  * I had ideas for improvement but do not remember them now.
  */
-public final class BuildMyThingMode implements GameplayMode {
+public final class BuildBattleMode implements GameplayMode {
     private Game game;
     private State state = State.INIT;
     private String itemName;
@@ -41,7 +41,7 @@ public final class BuildMyThingMode implements GameplayMode {
 
     @Override
     public GameplayType getType() {
-        return GameplayType.BUILD_MY_THING;
+        return GameplayType.BUILD_BATTLE;
     }
 
     @Override
@@ -145,8 +145,12 @@ public final class BuildMyThingMode implements GameplayMode {
 
     @Override
     public BossBar getBossBar(Player player) {
-        if (!revealItemName || !game.isPlaying(player)) return null;
-        return BossBar.bossBar(text(itemName, GREEN), progress, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+        switch (state) {
+        case BUILD:
+            return BossBar.bossBar(text(itemName, GREEN), progress, BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
+        default:
+            return null;
+        }
     }
 
     @Override

@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
-import static com.cavetale.core.font.Unicode.tiny;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
@@ -13,9 +12,9 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 @Getter
 @RequiredArgsConstructor
 public enum GameplayType {
-    BUILD_MY_THING(BuildMyThingMode::new,
-                   textOfChildren(text("Build", GREEN), text(tiny("my"), DARK_GRAY), text("Thing", BLUE)),
-                   "We all build the same item and then judge every build"),
+    BUILD_BATTLE(BuildBattleMode::new,
+                 textOfChildren(text("Build ", BLUE), text("Battle", GOLD)),
+                 "We all build the same item and then judge every build"),
     ;
 
     private final Supplier<GameplayMode> gameModeSupplier;
