@@ -3,7 +3,6 @@ package com.cavetale.buildmything;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec2i;
 import com.cavetale.core.struct.Vec3i;
-import java.util.UUID;
 import lombok.Data;
 
 @Data
@@ -13,7 +12,6 @@ public final class GameRegion {
     private final Vec2i min;
     private final Vec2i max;
     private final Vec2i center;
-    private UUID currentPlayer;
 
     public GameRegion(final Game game, final Vec2i allocatorVector, final Vec2i min, final Vec2i max) {
         this.game = game;

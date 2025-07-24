@@ -46,7 +46,7 @@ public final class GameListener implements Listener {
     private void onPlayerHud(PlayerHudEvent event) {
         final Game game = Game.in(event.getPlayer().getWorld());
         if (game == null || game.getMode() == null) return;
-        game.getMode().onPlayerHud(event);
+        game.onPlayerHud(event);
     }
 
     private static void checkBlockEdit(Player player, Block block, Cancellable event) {

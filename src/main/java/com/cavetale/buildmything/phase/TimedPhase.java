@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 /**
  * This is a useful type of phase which has a timer.  It runs for a
@@ -17,7 +18,7 @@ public class TimedPhase implements GamePhase {
     private long secondsRemaining;
     private Instant startTime;
     private Instant stopTime;
-    private boolean finished;
+    @Setter private boolean finished;
     private float progress;
 
     /**

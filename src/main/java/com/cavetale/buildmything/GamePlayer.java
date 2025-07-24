@@ -1,7 +1,5 @@
 package com.cavetale.buildmything;
 
-import com.cavetale.core.struct.Cuboid;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.Data;
@@ -13,9 +11,15 @@ import org.bukkit.entity.Player;
 public final class GamePlayer {
     private final UUID uuid;
     private String name;
-    private GameRegion currentRegion;
-    private final List<Cuboid> buildAreas = new ArrayList<>();
+    /**
+     * This area belongs to the player and they can build there as
+     * long as Game::isBuildingAllowed yields true.
+     */
+    private BuildArea buildArea;
     private boolean playing = false;
+    // RatePhase
+    private List<GamePlayer> ratePlayerList;
+    private int rateIndex;
 
     public GamePlayer(final Player player) {
         this.uuid = player.getUniqueId();
@@ -26,10 +30,7 @@ public final class GamePlayer {
         return Bukkit.getPlayer(uuid);
     }
 
-    public boolean buildAreasContain(Block block) {
-        for (Cuboid buildArea : buildAreas) {
-            if (buildArea.contains(block)) return true;
-        }
-        return false;
+    public boolean canBuildHere(Block block) {
+        return buildArea != null && buildArea.getArea().contains(block);
     }
 }

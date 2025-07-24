@@ -18,14 +18,25 @@ softdepend: []
 commands:
 
   buildmything:
-    aliases: []
+    aliases: [bmt]
     description: BuildMyThing Command
     permission: buildmything.buildmything
     usage: |-
       /buildmything
 
+  buildmythingadmin:
+    aliases: [bmtadm]
+    description: BuildMyThing Admin Command
+    permission: buildmything.admin
+    usage: |-
+      /buildmythingadmin
+
 permissions:
 
   buildmything.buildmything:
     description: Use /buildmything
+    default: op
+
+  buildmything.admin:
+    description: Use /buildmythingadmin
     default: op

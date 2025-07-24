@@ -2,6 +2,9 @@ package com.cavetale.buildmything;
 
 import com.cavetale.buildmything.mode.GameplayMode;
 import com.cavetale.buildmything.mode.GameplayType;
+import com.cavetale.core.event.hud.PlayerHudEvent;
+import com.cavetale.core.event.hud.PlayerHudPriority;
+import com.cavetale.core.struct.Cuboid;
 import com.winthier.creative.file.Files;
 import java.io.File;
 import java.util.ArrayList;
@@ -12,6 +15,9 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -23,6 +29,10 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import static com.cavetale.buildmything.BuildMyThingPlugin.buildMyThingPlugin;
+import static com.cavetale.core.font.Unicode.tiny;
+import static com.cavetale.mytems.util.Text.wrapLine;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.TextColor.color;
 
 /**
  * Represents one game.  To launch a game, run the following steps:
@@ -49,6 +59,7 @@ public final class Game {
     @Setter private GameplayMode mode;
     private final Map<UUID, GamePlayer> players = new HashMap<>();
     @Setter private boolean buildingAllowed;
+    @Setter private boolean finished;
 
     public GamePlayer addPlayer(Player player) {
         plugin.getLogger().info("[" + name + "] Adding player: " + player.getName());
@@ -58,8 +69,17 @@ public final class Game {
         return gamePlayer;
     }
 
-    public GamePlayer getPlayer(Player player) {
+    public GamePlayer getGamePlayer(UUID uuid) {
+        return players.get(uuid);
+    }
+
+    public GamePlayer getGamePlayer(Player player) {
         return players.get(player.getUniqueId());
+    }
+
+    public boolean isPlaying(Player player) {
+        final GamePlayer gp = getGamePlayer(player);
+        return gp != null && gp.isPlaying();
     }
 
     public void enable() {
@@ -124,6 +144,14 @@ public final class Game {
         return List.copyOf(players.values());
     }
 
+    public List<GamePlayer> getPlayingGamePlayers() {
+        final List<GamePlayer> result = new ArrayList<>(players.size());
+        for (GamePlayer gp : players.values()) {
+            if (gp.isPlaying()) result.add(gp);
+        }
+        return result;
+    }
+
     public List<Player> getOnlinePlayers() {
         final List<Player> result = new ArrayList<>();
         for (UUID uuid : players.keySet()) {
@@ -135,12 +163,38 @@ public final class Game {
         return result;
     }
 
+    public List<Player> getOnlinePlayingPlayers() {
+        final List<Player> result = new ArrayList<>();
+        for (GamePlayer gp : players.values()) {
+            if (!gp.isPlaying()) continue;
+            final Player player = gp.getPlayer();
+            if (player == null) continue;
+            result.add(player);
+        }
+        return result;
+    }
+
+    public List<Player> getPresentPlayers() {
+        return world.getPlayers();
+    }
+
     public boolean playerCanBuild(Player player, Block block) {
         if (!buildingAllowed) return false;
-        final GamePlayer gp = getPlayer(player);
+        final GamePlayer gp = getGamePlayer(player);
         if (gp == null || !gp.isPlaying()) return false;
-        if (!gp.buildAreasContain(block)) return false;
+        if (!gp.canBuildHere(block)) return false;
         return true;
+    }
+
+    public void createOneBuildAreaPerPlayer(final int sizeX, final int sizeY, final int sizeZ) {
+        for (GamePlayer gp : players.values()) {
+            if (!gp.isPlaying()) continue;
+            final GameRegion region = regionAllocator.allocateRegion();
+            final Cuboid area = region.createCentralSelection(sizeX, sizeY, sizeZ);
+            final BuildArea buildArea = new BuildArea(region, area);
+            buildArea.setOwningPlayer(gp);
+            gp.setBuildArea(buildArea);
+        }
     }
 
     public static Game in(World inWorld) {
@@ -148,5 +202,28 @@ public final class Game {
             if (inWorld.equals(game.world)) return game;
         }
         return null;
+    }
+
+    public void onPlayerHud(PlayerHudEvent event) {
+        final Player player = event.getPlayer();
+        final List<Component> sidebar = new ArrayList<>();
+        final TextColor hotpink = color(0xff69b4);
+        sidebar.add(mode.getTitle());
+        for (String txt: wrapLine(mode.getDescription(), 28)) {
+            sidebar.add(text(tiny(txt), hotpink));
+        }
+        mode.onPlayerSidebar(player, sidebar);
+        event.sidebar(PlayerHudPriority.HIGH, sidebar);
+        final BossBar bossbar = mode.getBossBar(player);
+        if (bossbar != null) {
+            event.bossbar(PlayerHudPriority.HIGH, bossbar);
+        }
+    }
+
+    public void calculateAllRatings() {
+        for (GamePlayer gp : getPlayingGamePlayers()) {
+            if (gp.getBuildArea() == null) continue;
+            gp.getBuildArea().calculateRating();
+        }
     }
 }

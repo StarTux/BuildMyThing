@@ -16,7 +16,9 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 public final class BuildMyThingPlugin extends JavaPlugin {
     private static BuildMyThingPlugin instance;
     private final BuildMyThingCommand buildmythingCommand = new BuildMyThingCommand(this);
+    private final BuildMyThingAdminCommand adminCommand = new BuildMyThingAdminCommand(this);
     private final List<Game> games = new ArrayList<>();
+    private final WordList wordList = new WordList(this);
     private final Component title = textOfChildren(text("Build", GREEN),
                                                    text(tiny("my"), DARK_GRAY),
                                                    text("Thing", BLUE));
@@ -28,7 +30,9 @@ public final class BuildMyThingPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         buildmythingCommand.enable();
+        adminCommand.enable();
         Bukkit.getScheduler().runTaskTimer(this, this::tick, 1L, 1L);
+        wordList.load();
         new GameListener(this).enable();
     }
 
@@ -49,19 +53,23 @@ public final class BuildMyThingPlugin extends JavaPlugin {
     }
 
     private void tick() {
-        Game faultyGame = null;
+        Game removeGame = null;
         for (Game game : games) {
+            if (game.isFinished()) {
+                removeGame = game;
+                continue;
+            }
             try {
                 game.tick();
             } catch (Exception e) {
-                faultyGame = game;
+                removeGame = game;
                 getLogger().log(Level.SEVERE, "Ticking game " + game.getName(), e);
                 break;
             }
         }
-        if (faultyGame != null) {
-            games.remove(faultyGame);
-            faultyGame.disable();
+        if (removeGame != null) {
+            games.remove(removeGame);
+            removeGame.disable();
         }
     }
 
