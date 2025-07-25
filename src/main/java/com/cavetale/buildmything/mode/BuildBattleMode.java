@@ -1,7 +1,9 @@
 package com.cavetale.buildmything.mode;
 
+import com.cavetale.buildmything.BuildArea;
 import com.cavetale.buildmything.Game;
 import com.cavetale.buildmything.GamePlayer;
+import com.cavetale.buildmything.GameRegion;
 import com.cavetale.buildmything.phase.BuildPhase;
 import com.cavetale.buildmything.phase.CountdownPhase;
 import com.cavetale.buildmything.phase.GamePhase;
@@ -10,6 +12,7 @@ import com.cavetale.buildmything.phase.RankingPhase;
 import com.cavetale.buildmything.phase.RatePhase;
 import com.cavetale.buildmything.phase.TimedPhase;
 import com.cavetale.buildmything.phase.WarpPlayerToBuildAreaPhase;
+import com.cavetale.core.struct.Vec3i;
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.List;
@@ -32,6 +35,7 @@ import static net.kyori.adventure.title.Title.Times.times;
  * I had ideas for improvement but do not remember them now.
  */
 public final class BuildBattleMode implements GameplayMode {
+    private final Vec3i buildAreaSize = Vec3i.of(16, 16, 16);
     private Game game;
     private State state = State.INIT;
     private String itemName;
@@ -39,6 +43,8 @@ public final class BuildBattleMode implements GameplayMode {
     private final EnumMap<State, GamePhase> stateMap = new EnumMap<>(State.class);
     private float progress = 0f;
     private boolean revealItemName = false;
+    private List<BuildArea> buildAreas;
+    private GameRegion ratingRegion;
 
     @Override
     public GameplayType getType() {
@@ -48,13 +54,15 @@ public final class BuildBattleMode implements GameplayMode {
     @Override
     public void enable(final Game theGame) {
         this.game = theGame;
-        game.createOneBuildAreaPerPlayer(16, 16, 16);
-        stateMap.put(State.WARP, new WarpPlayerToBuildAreaPhase(game));
+        ratingRegion = game.getRegionAllocator().allocateRegion();
+        buildAreas = game.createOneBuildAreaPerPlayer(buildAreaSize);
+        stateMap.put(State.WARP, new WarpPlayerToBuildAreaPhase(game, buildAreas));
         stateMap.put(State.COUNTDOWN, new CountdownPhase(game, Duration.ofSeconds(10)));
         stateMap.put(State.BUILD, new BuildPhase(game, Duration.ofMinutes(3)));
         stateMap.put(State.POST_BUILD, new PausePhase(Duration.ofSeconds(5)));
-        stateMap.put(State.RATE, new RatePhase(game, Duration.ofSeconds(60)));
-        stateMap.put(State.RANKING, new RankingPhase(game));
+        stateMap.put(State.RATE, new RatePhase(game, buildAreas, Duration.ofSeconds(60)));
+        stateMap.put(State.RANKING, new RankingPhase(game, buildAreas, buildAreaSize, 4, ratingRegion));
+        stateMap.put(State.END, new PausePhase(Duration.ofSeconds(60)));
         itemName = game.getPlugin().getWordList().randomWord();
         setState(State.WARP);
     }
@@ -187,6 +195,7 @@ public final class BuildBattleMode implements GameplayMode {
         POST_BUILD,
         RATE,
         RANKING,
+        END,
         ;
 
         public State next() {

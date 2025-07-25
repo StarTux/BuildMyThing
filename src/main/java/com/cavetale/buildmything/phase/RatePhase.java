@@ -9,8 +9,11 @@ import com.cavetale.mytems.util.Gui;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +34,14 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
  */
 public final class RatePhase extends TimedPhase {
     private final Game game;
+    private final List<BuildArea> buildAreas;
     // Players who haven't finished rating yet.
     private Set<UUID> pendingPlayers = new HashSet<>();
 
-    public RatePhase(final Game game, final Duration duration) {
+    public RatePhase(final Game game, final List<BuildArea> buildAreas, final Duration duration) {
         super(duration);
         this.game = game;
+        this.buildAreas = buildAreas;
     }
 
     /**
@@ -47,19 +52,13 @@ public final class RatePhase extends TimedPhase {
     @Override
     public void start() {
         super.start();
-        final List<GamePlayer> players = game.getPlayingGamePlayers();
-        for (GamePlayer gp : players) {
+        for (GamePlayer gp : game.getPlayingGamePlayers()) {
             pendingPlayers.add(gp.getUuid());
-            final List<GamePlayer> list = new ArrayList<>();
-            for (GamePlayer gp2 : players) {
-                if (gp == gp2) continue;
-                list.add(gp2);
-            }
-            Collections.shuffle(list);
-            gp.setRatePlayerList(list);
+            final List<BuildArea> rateAreaList = new ArrayList<>(buildAreas);
+            rateAreaList.removeIf(ba -> ba.getOwningPlayer() == gp);
+            Collections.shuffle(rateAreaList);
+            gp.setRateAreaList(rateAreaList);
             gp.setRateIndex(0);
-        }
-        for (GamePlayer gp : players) {
             teleportPlayer(gp);
         }
     }
@@ -77,14 +76,14 @@ public final class RatePhase extends TimedPhase {
     private void teleportPlayer(GamePlayer gp) {
         final Player player = gp.getPlayer();
         if (player == null) return;
-        if (gp.getRateIndex() >= gp.getRatePlayerList().size()) {
+        if (gp.getRateIndex() >= gp.getRateAreaList().size()) {
             pendingPlayers.remove(gp.getUuid());
             if (pendingPlayers.isEmpty()) {
                 setFinished(true);
             }
             return;
         }
-        gp.getRatePlayerList().get(gp.getRateIndex()).getBuildArea().bringViewer(player);
+        gp.getRateAreaList().get(gp.getRateIndex()).bringViewer(player);
         player.setGameMode(GameMode.SPECTATOR);
         player.sendMessage(empty());
         player.sendMessage(textOfChildren(Mytems.MOUSE_LEFT, text(" Click Here to Rate this Build", GREEN, BOLD))
@@ -97,7 +96,7 @@ public final class RatePhase extends TimedPhase {
         if (isFinished()) return;
         if (!game.isPlaying(player)) return;
         final GamePlayer gp = game.getGamePlayer(player);
-        final BuildArea buildArea = gp.getRatePlayerList().get(gp.getRateIndex()).getBuildArea();
+        final BuildArea buildArea = gp.getRateAreaList().get(gp.getRateIndex());
         new RateMenu(player, gp, buildArea).create().open();
     }
 
@@ -161,6 +160,26 @@ public final class RatePhase extends TimedPhase {
 
     @Override
     public void onFinished() {
-        game.calculateAllRatings();
+        // Calculate average rating given of all players
+        final Map<UUID, Double> ratingGiven = new HashMap<>();
+        final Map<UUID, Integer> timesRated = new HashMap<>();
+        for (BuildArea buildArea : buildAreas) {
+            for (Map.Entry<UUID, Integer> entry : buildArea.getRatings().entrySet()) {
+                final UUID uuid = entry.getKey();
+                final int value = entry.getValue();
+                ratingGiven.put(uuid, ratingGiven.getOrDefault(uuid, 0.0) + (double) value);
+                timesRated.put(uuid, timesRated.getOrDefault(uuid, 0) + 1);
+            }
+        }
+        // Calculate average
+        for (UUID uuid : timesRated.keySet()) {
+            ratingGiven.put(uuid, ratingGiven.getOrDefault(uuid, 0.0) / (double) timesRated.getOrDefault(uuid, 1));
+        }
+        game.getPlugin().getLogger().info("[" + game.getName() + "] average ratings: " + ratingGiven);
+        // Call it
+        for (BuildArea buildArea : buildAreas) {
+            buildArea.calculateRating(ratingGiven.getOrDefault(buildArea.getOwningPlayer().getUuid(), 1.0));
+        }
+        buildAreas.sort(Comparator.comparing(BuildArea::getFinalRating));
     }
 }

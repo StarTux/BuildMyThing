@@ -3,6 +3,9 @@ package com.cavetale.buildmything;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec2i;
 import com.cavetale.core.struct.Vec3i;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -31,5 +34,34 @@ public final class GameRegion {
         final Vec3i a = base.add(-sizeX / 2, 0, -sizeZ / 2);
         final Vec3i b = a.add(sizeX, sizeY, sizeZ);
         return Cuboid.containing(a, b);
+    }
+
+    public List<GameRegion> createSubregions(int sizeX, int sizeZ, int border, int count) {
+        final List<GameRegion> result = new ArrayList<>();
+        result.add(createSubRegion(0, 0, sizeX, sizeZ, border));
+        for (int radius = 1; result.size() < count; radius += 1) { // ring
+            for (int d = -radius; d < radius; d += 1) {
+                result.add(createSubRegion(d, -radius, sizeX, sizeZ, border));
+            }
+            for (int d = -radius; d < radius; d += 1) {
+                result.add(createSubRegion(radius, d, sizeX, sizeZ, border));
+            }
+            for (int d = -radius; d < radius; d += 1) {
+                result.add(createSubRegion(-d, radius, sizeX, sizeZ, border));
+            }
+            for (int d = -radius; d < radius; d += 1) {
+                result.add(createSubRegion(-radius, -d, sizeX, sizeZ, border));
+            }
+        }
+        result.sort(Comparator.comparing(r -> Math.abs(r.allocatorVector.x) + Math.abs(r.allocatorVector.z)));
+        return result;
+    }
+
+    private GameRegion createSubRegion(int x, int z, int sizeX, int sizeZ, int border) {
+        final Vec2i newVector = Vec2i.of(x, z);
+        final Vec2i newMin = center.add(x * (sizeX + border) - (sizeX / 2), z * (sizeZ + border) - sizeZ / 2);
+        final Vec2i newMax = newMin.add(sizeX, sizeZ);
+        final GameRegion result = new GameRegion(game, newVector, newMin, newMax);
+        return result;
     }
 }

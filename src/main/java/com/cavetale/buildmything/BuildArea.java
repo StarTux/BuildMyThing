@@ -3,6 +3,7 @@ package com.cavetale.buildmything;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec2i;
 import com.cavetale.core.struct.Vec3d;
+import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.item.axis.CuboidOutline;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +15,7 @@ import java.util.function.Consumer;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -22,9 +24,12 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.structure.Mirror;
+import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.structure.Structure;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
@@ -51,6 +56,12 @@ public final class BuildArea {
 
     public World getWorld() {
         return region.getGame().getWorld();
+    }
+
+    public void cloneDataFrom(BuildArea other) {
+        owningPlayer = other.owningPlayer;
+        ratings = other.ratings;
+        finalRating = other.finalRating;
     }
 
     public void loadChunks(Consumer<List<Chunk>> callback) {
@@ -93,6 +104,17 @@ public final class BuildArea {
                 final int x = area.ax - 1;
                 final Block block = world.getBlockAt(x, y, z);
                 block.setType((y & 1) == (z & 1) ? a : b, false);
+                frameBlocks.add(block);
+            }
+        }
+    }
+
+    public void placePodium() {
+        final World world = getWorld();
+        for (int z = area.az; z <= area.bz; z += 1) {
+            for (int x = area.ax; x <= area.bx; x += 1) {
+                final Block block = world.getBlockAt(x, area.ay - 2, z);
+                block.setType(Material.GRASS_BLOCK);
                 frameBlocks.add(block);
             }
         }
@@ -178,7 +200,7 @@ public final class BuildArea {
         player.setFlying(true);
     }
 
-    public void calculateRating(final Map<UUID, Double> averageRating) {
+    public void calculateRating(double fairnessFactor) {
         if (ratings.isEmpty()) {
             return;
         }
@@ -186,6 +208,25 @@ public final class BuildArea {
         for (int r : ratings.values()) {
             total += r;
         }
-        finalRating = ((double) total) / ((double) ratings.size()) * averageRating.getOrDefault(owningPlayer.getUuid(), 1.0);
+        finalRating = ((double) total) / ((double) ratings.size()) * fairnessFactor;
+        region.getGame().getPlugin().getLogger().info("[" + region.getGame().getName() + "] Score " + owningPlayer.getName() + ": " + finalRating);
+    }
+
+    public void copyTo(BuildArea dest) {
+        final World origWorld = getWorld();
+        final World destWorld = dest.getWorld();
+        final Structure structure = Bukkit.getStructureManager().createStructure();
+        final boolean includeEntities = true;
+        structure.fill(area.getMin().toLocation(origWorld),
+                       area.getMax().add(1, 1, 1).toLocation(origWorld),
+                       includeEntities);
+        final int palette = 0;
+        final float integrity = 1f; // pristine
+        structure.place(dest.getArea().getMin().toLocation(destWorld),
+                        includeEntities,
+                        StructureRotation.NONE, Mirror.NONE,
+                        palette,
+                        integrity,
+                        ThreadLocalRandom.current());
     }
 }

@@ -3,7 +3,9 @@ package com.cavetale.buildmything.phase;
 import com.cavetale.buildmything.BuildArea;
 import com.cavetale.buildmything.Game;
 import com.cavetale.buildmything.GamePlayer;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.Chunk;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -17,22 +19,25 @@ import org.bukkit.entity.Player;
 @RequiredArgsConstructor
 public final class WarpPlayerToBuildAreaPhase implements GamePhase {
     private final Game game;
+    private final List<BuildArea> buildAreas;
     private int waiting;
 
     @Override
     public void start() {
-        for (GamePlayer gp : game.getAllGamePlayers()) {
-            waiting += 1;
-            final BuildArea buildArea = gp.getBuildArea();
-            buildArea.loadChunks(chunks -> {
-                    waiting -= 1;
-                    final Player player = gp.getPlayer();
-                    if (player != null) {
-                        buildArea.bringBuilder(player);
-                        player.setGameMode(GameMode.CREATIVE);
-                    }
-                });
+        waiting = buildAreas.size();
+        for (BuildArea buildArea : buildAreas) {
+            buildArea.loadChunks(chunks -> chunkCallback(buildArea));
         }
+    }
+
+    private void chunkCallback(BuildArea buildArea) {
+        waiting -= 1;
+        final GamePlayer gp = buildArea.getOwningPlayer();
+        if (gp == null) return;
+        final Player player = gp.getPlayer();
+        if (player == null) return;
+        buildArea.bringBuilder(player);
+        player.setGameMode(GameMode.CREATIVE);
     }
 
     @Override

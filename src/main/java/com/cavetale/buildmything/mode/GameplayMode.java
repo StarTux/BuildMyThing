@@ -48,4 +48,6 @@ public interface GameplayMode {
     BossBar getBossBar(Player player);
 
     default void onRateCommand(Player player) { }
+
+    default void onGuessCommand(Player player, String word) { }
 }

@@ -18,7 +18,7 @@ public final class GamePlayer {
     private BuildArea buildArea;
     private boolean playing = false;
     // RatePhase
-    private List<GamePlayer> ratePlayerList;
+    private List<BuildArea> rateAreaList;
     private int rateIndex;
 
     public GamePlayer(final Player player) {

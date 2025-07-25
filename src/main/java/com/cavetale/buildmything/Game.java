@@ -5,6 +5,7 @@ import com.cavetale.buildmything.mode.GameplayType;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.struct.Cuboid;
+import com.cavetale.core.struct.Vec3i;
 import com.winthier.creative.file.Files;
 import java.io.File;
 import java.util.ArrayList;
@@ -139,6 +140,8 @@ public final class Game {
         world = creator.createWorld();
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true);
         world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+        world.setGameRule(GameRule.LOCATOR_BAR, false);
+        world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
         world.setTime(6000L);
         world.setPVP(false);
     }
@@ -199,15 +202,18 @@ public final class Game {
         return true;
     }
 
-    public void createOneBuildAreaPerPlayer(final int sizeX, final int sizeY, final int sizeZ) {
+    public List<BuildArea> createOneBuildAreaPerPlayer(Vec3i size) {
+        final List<BuildArea> result = new ArrayList<>();
         for (GamePlayer gp : players.values()) {
             if (!gp.isPlaying()) continue;
             final GameRegion region = regionAllocator.allocateRegion();
-            final Cuboid area = region.createCentralSelection(sizeX, sizeY, sizeZ);
+            final Cuboid area = region.createCentralSelection(size.x, size.y, size.z);
             final BuildArea buildArea = new BuildArea(region, area);
             buildArea.setOwningPlayer(gp);
             gp.setBuildArea(buildArea);
+            result.add(buildArea);
         }
+        return result;
     }
 
     public static Game in(World inWorld) {
@@ -230,31 +236,6 @@ public final class Game {
         final BossBar bossbar = mode.getBossBar(player);
         if (bossbar != null) {
             event.bossbar(PlayerHudPriority.HIGH, bossbar);
-        }
-    }
-
-    public void calculateAllRatings() {
-        // Calculate average rating given of all players
-        final Map<UUID, Double> ratingGiven = new HashMap<>();
-        final Map<UUID, Integer> timesRated = new HashMap<>();
-        for (GamePlayer gp : players.values()) {
-            if (gp.getBuildArea() == null) continue;
-            for (Map.Entry<UUID, Integer> entry : gp.getBuildArea().getRatings().entrySet()) {
-                final UUID uuid = entry.getKey();
-                final int value = entry.getValue();
-                ratingGiven.put(uuid, ratingGiven.getOrDefault(uuid, 0.0) + (double) value);
-                timesRated.put(uuid, timesRated.getOrDefault(uuid, 0) + 1);
-            }
-        }
-        // Calculate average
-        for (UUID uuid : timesRated.keySet()) {
-            ratingGiven.put(uuid, ratingGiven.getOrDefault(uuid, 0.0) / (double) timesRated.getOrDefault(uuid, 1));
-        }
-        plugin.getLogger().info("[" + name + "] average ratings: " + ratingGiven);
-        // Call it
-        for (GamePlayer gp : players.values()) {
-            if (gp.getBuildArea() == null) continue;
-            gp.getBuildArea().calculateRating(ratingGiven);
         }
     }
 }

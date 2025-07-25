@@ -1,6 +1,8 @@
 package com.cavetale.buildmything;
 
+import com.cavetale.buildmything.mode.GameplayType;
 import com.cavetale.core.command.AbstractCommand;
+import com.cavetale.core.command.CommandArgCompleter;
 import com.cavetale.core.command.CommandWarn;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -17,7 +19,8 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
     @Override
     protected void onEnable() {
         rootNode.description("Build my Thing admin command");
-        rootNode.addChild("start").denyTabCompletion()
+        rootNode.addChild("start").arguments("[type]")
+            .completers(CommandArgCompleter.enumLowerList(GameplayType.class))
             .description("Start a game")
             .senderCaller(this::start);
         rootNode.addChild("skip").denyTabCompletion()
@@ -25,8 +28,15 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
             .playerCaller(this::skip);
     }
 
-    private void start(CommandSender sender) {
+    private boolean start(CommandSender sender, String[] args) {
+        if (args.length != 0 && args.length != 1) return false;
+        final GameplayType type = args.length >= 1
+            ? CommandArgCompleter.requireEnum(GameplayType.class, args[0])
+            : null;
         final Game game = new Game(plugin, "test");
+        if (type != null) {
+            game.setMode(type.createGameplayMode());
+        }
         for (Player player : Bukkit.getWorlds().get(0).getPlayers()) {
             game.addPlayer(player);
         }
@@ -34,6 +44,7 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
         plugin.getGames().add(game);
         sender.sendMessage(textOfChildren(text("Game started: ", YELLOW),
                                           text(game.getName(), GOLD)));
+        return true;
     }
 
     private void skip(Player player) {
