@@ -6,6 +6,7 @@ import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
+import com.winthier.creative.BuildWorld;
 import com.winthier.creative.file.Files;
 import java.io.File;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -23,6 +25,7 @@ import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
@@ -34,7 +37,10 @@ import static com.cavetale.buildmything.BuildMyThingPlugin.buildMyThingPlugin;
 import static com.cavetale.core.font.Unicode.tiny;
 import static com.cavetale.mytems.util.Text.wrapLine;
 import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.textOfChildren;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextColor.color;
+import static net.kyori.adventure.text.format.TextDecoration.*;
 
 /**
  * Represents one game.  To launch a game, run the following steps:
@@ -62,6 +68,7 @@ public final class Game {
     private final Map<UUID, GamePlayer> players = new HashMap<>();
     @Setter private boolean buildingAllowed;
     @Setter private boolean finished;
+    private GameRegion spawnRegion;
 
     public GamePlayer addPlayer(Player player) {
         plugin.getLogger().info("[" + name + "] Adding player: " + player.getName());
@@ -93,11 +100,14 @@ public final class Game {
     }
 
     public void enable() {
-        createWorld();
         if (mode == null) {
-            mode = GameplayType.random().createGameplayMode();
+            mode = GameplayType.random().createGameplayMode(this);
         }
-        mode.enable(this);
+        regionAllocator = new RegionAllocator(this, 512);
+        loadWorld(() -> {
+                spawnRegion = regionAllocator.allocateRegion();
+                mode.enable();
+            });
     }
 
     public void disable() {
@@ -115,6 +125,7 @@ public final class Game {
                 for (PotionEffect effect : player.getActivePotionEffects()) {
                     player.removePotionEffect(effect.getType());
                 }
+                player.getInventory().clear();
                 player.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
             }
             Files.deleteWorld(world);
@@ -136,8 +147,19 @@ public final class Game {
         creator.seed(0L);
         creator.type(WorldType.NORMAL);
         creator.keepSpawnLoaded(TriState.FALSE);
-        regionAllocator = new RegionAllocator(this, 512);
         world = creator.createWorld();
+        prepareWorld();
+    }
+
+    private void loadWorld(Runnable callback) {
+        BuildWorld.findWithPath("buildmything").makeLocalCopyAsync(newWorld -> {
+                world = newWorld;
+                prepareWorld();
+                callback.run();
+            });
+    }
+
+    private void prepareWorld() {
         world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true);
         world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
         world.setGameRule(GameRule.LOCATOR_BAR, false);
@@ -150,6 +172,7 @@ public final class Game {
      * Called by BuildMyThingPlugin.
      */
     protected void tick() {
+        if (world == null) return;
         if (mode == null) {
             throw new IllegalStateException("mode = null");
         }
@@ -227,15 +250,38 @@ public final class Game {
         final Player player = event.getPlayer();
         final List<Component> sidebar = new ArrayList<>();
         final TextColor hotpink = color(0xff69b4);
-        sidebar.add(mode.getTitle());
-        for (String txt: wrapLine(mode.getDescription(), 28)) {
-            sidebar.add(text(tiny(txt), hotpink));
+        sidebar.add(textOfChildren(text(tiny("mode "), DARK_GRAY),
+                                   mode.getTitle().decorate(BOLD)));
+        for (String txt: wrapLine(mode.getDescription(), 20)) {
+            sidebar.add(text(" " + tiny(txt), hotpink));
         }
         mode.onPlayerSidebar(player, sidebar);
         event.sidebar(PlayerHudPriority.HIGH, sidebar);
         final BossBar bossbar = mode.getBossBar(player);
         if (bossbar != null) {
             event.bossbar(PlayerHudPriority.HIGH, bossbar);
+        }
+    }
+
+    public Location getSpawnLocation() {
+        return world.getSpawnLocation();
+    }
+
+    public void bringAllPlayers(Consumer<Player> callback) {
+        final Location location = getSpawnLocation();
+        for (GamePlayer gp : players.values()) {
+            final Player player = gp.getPlayer();
+            if (player == null) continue;
+            player.eject();
+            player.leaveVehicle();
+            player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
+            player.setFoodLevel(20);
+            player.setSaturation(20f);
+            for (PotionEffect effect : player.getActivePotionEffects()) {
+                player.removePotionEffect(effect.getType());
+            }
+            player.teleport(location);
+            callback.accept(player);
         }
     }
 }

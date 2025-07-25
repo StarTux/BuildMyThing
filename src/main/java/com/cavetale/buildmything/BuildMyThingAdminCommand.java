@@ -35,7 +35,7 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
             : null;
         final Game game = new Game(plugin, "test");
         if (type != null) {
-            game.setMode(type.createGameplayMode());
+            game.setMode(type.createGameplayMode(game));
         }
         for (Player player : Bukkit.getWorlds().get(0).getPlayers()) {
             game.addPlayer(player);

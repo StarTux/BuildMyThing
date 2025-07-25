@@ -4,8 +4,9 @@ import com.cavetale.buildmything.BuildArea;
 import com.cavetale.buildmything.Game;
 import com.cavetale.buildmything.GamePlayer;
 import java.util.List;
+import java.util.function.Consumer;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.bukkit.Chunk;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -16,11 +17,13 @@ import org.bukkit.entity.Player;
  * When this phase is finished, all areas will be loaded and the
  * player, provided they are there, be present.
  */
+@Data
 @RequiredArgsConstructor
 public final class WarpPlayerToBuildAreaPhase implements GamePhase {
     private final Game game;
     private final List<BuildArea> buildAreas;
     private int waiting;
+    private Consumer<BuildArea> areaCallback;
 
     @Override
     public void start() {
@@ -38,6 +41,9 @@ public final class WarpPlayerToBuildAreaPhase implements GamePhase {
         if (player == null) return;
         buildArea.bringBuilder(player);
         player.setGameMode(GameMode.CREATIVE);
+        if (areaCallback != null) {
+            areaCallback.accept(buildArea);
+        }
     }
 
     @Override

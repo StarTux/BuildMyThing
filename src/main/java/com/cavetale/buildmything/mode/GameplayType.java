@@ -1,7 +1,8 @@
 package com.cavetale.buildmything.mode;
 
+import com.cavetale.buildmything.Game;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
@@ -15,9 +16,12 @@ public enum GameplayType {
     BUILD_BATTLE(BuildBattleMode::new,
                  textOfChildren(text("Build ", BLUE), text("Battle", GOLD)),
                  "We all build the same item and then judge every build"),
+    TELEPHONE(TelephoneMode::new,
+              text("Telephone", LIGHT_PURPLE),
+              "We build, we guess, we build again"),
     ;
 
-    private final Supplier<GameplayMode> gameModeSupplier;
+    private final Function<Game, GameplayMode> gameModeSupplier;
     private final Component title;
     private final String description;
 
@@ -26,7 +30,7 @@ public enum GameplayType {
         return all[ThreadLocalRandom.current().nextInt(all.length)];
     }
 
-    public GameplayMode createGameplayMode() {
-        return gameModeSupplier.get();
+    public GameplayMode createGameplayMode(Game game) {
+        return gameModeSupplier.apply(game);
     }
 }

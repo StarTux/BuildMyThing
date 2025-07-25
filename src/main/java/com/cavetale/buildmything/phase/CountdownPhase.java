@@ -36,7 +36,7 @@ public final class CountdownPhase extends TimedPhase {
                                   times(Duration.ofSeconds(0),
                                         Duration.ofMillis(500),
                                         Duration.ofMillis(500)));
-        for (Player player : game.getOnlinePlayers()) {
+        for (Player player : game.getPresentPlayers()) {
             player.showTitle(title);
         }
     }

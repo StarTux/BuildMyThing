@@ -16,6 +16,7 @@ public final class GamePlayer {
      * long as Game::isBuildingAllowed yields true.
      */
     private BuildArea buildArea;
+    private BuildArea guessArea;
     private boolean playing = false;
     // RatePhase
     private List<BuildArea> rateAreaList;

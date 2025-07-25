@@ -1,6 +1,5 @@
 package com.cavetale.buildmything.mode;
 
-import com.cavetale.buildmything.Game;
 import java.util.List;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -24,7 +23,7 @@ public interface GameplayMode {
     /**
      * This is called right after the Game created a world.
      */
-    void enable(Game game);
+    void enable();
 
     /**
      * The owning game will warp players back to the lobby and delete

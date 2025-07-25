@@ -10,6 +10,10 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+/**
+ * Allow building for a limited time.
+ * This phase usually follows WarpPlayerToBuildAreaPhase.
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public final class BuildPhase extends TimedPhase {

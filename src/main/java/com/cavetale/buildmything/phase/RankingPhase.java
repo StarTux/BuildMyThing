@@ -2,7 +2,6 @@ package com.cavetale.buildmything.phase;
 
 import com.cavetale.buildmything.BuildArea;
 import com.cavetale.buildmything.Game;
-import com.cavetale.buildmything.GamePlayer;
 import com.cavetale.buildmything.GameRegion;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.item.font.Glyph;
@@ -10,12 +9,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Getter;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.GameMode;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
@@ -24,7 +25,7 @@ import static net.kyori.adventure.title.Title.Times.times;
 /**
  * Copy all builds to one central area and present them in order.
  */
-@Getter
+@Data
 @RequiredArgsConstructor
 public final class RankingPhase implements GamePhase {
     private final Game game;
@@ -39,6 +40,7 @@ public final class RankingPhase implements GamePhase {
     private List<Component> sidebar;
     private List<BuildArea> targetAreas;
     private int waiting = 0;
+    private boolean useRanks = true;
 
     @Override
     public void start() {
@@ -75,13 +77,20 @@ public final class RankingPhase implements GamePhase {
         // Make a copy
         currentBuildArea = targetAreas.get(buildAreaIndex);
         currentBuildArea.cloneDataFrom(origArea);
-        final Title title = Title.title(rankNumber,
+        final Title title = Title.title(useRanks ? rankNumber : empty(),
                                         text(currentBuildArea.getOwningPlayer().getName(), BLUE),
                                         times(Duration.ofSeconds(2),
                                               Duration.ofSeconds(3),
                                               Duration.ofSeconds(1)));
-        final Component message = textOfChildren(rankNumber,
-                                                 text(" " + currentBuildArea.getOwningPlayer().getName(), BLUE));
+        final Component message;
+        if (useRanks) {
+            message = textOfChildren(rankNumber,
+                                     text(" " + currentBuildArea.getOwningPlayer().getName(), BLUE));
+        } else {
+            message = textOfChildren(text(currentBuildArea.getItemName(), GOLD),
+                                     text(" | ", DARK_GRAY),
+                                     text(currentBuildArea.getOwningPlayer().getName(), BLUE));
+        }
         origArea.copyTo(currentBuildArea);
         currentBuildArea.createTextLabel(text(currentBuildArea.getOwningPlayer().getName()));
         sidebar.add(0, message);
@@ -92,6 +101,9 @@ public final class RankingPhase implements GamePhase {
             player.setFlying(true);
             player.showTitle(title);
             player.sendMessage(message);
+            if (useRanks && rank == 1) {
+                player.playSound(player, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5f, 2f);
+            }
         }
     }
 }

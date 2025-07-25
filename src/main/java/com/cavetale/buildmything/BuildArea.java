@@ -3,7 +3,6 @@ package com.cavetale.buildmything;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec2i;
 import com.cavetale.core.struct.Vec3d;
-import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.item.axis.CuboidOutline;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +40,9 @@ public final class BuildArea {
     private final GameRegion region; // game, world
     private final Cuboid area;
     private GamePlayer owningPlayer;
+    private GamePlayer guessingPlayer;
+    private String itemName;
+    private String guessName;
     private boolean chunksLoaded;
     // Framing
     private final List<Block> frameBlocks = new ArrayList<>();
@@ -60,6 +62,9 @@ public final class BuildArea {
 
     public void cloneDataFrom(BuildArea other) {
         owningPlayer = other.owningPlayer;
+        guessingPlayer = other.guessingPlayer;
+        itemName = other.itemName;
+        guessName = other.guessName;
         ratings = other.ratings;
         finalRating = other.finalRating;
     }
@@ -172,6 +177,8 @@ public final class BuildArea {
         player.eject();
         player.leaveVehicle();
         player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
+        player.setFoodLevel(20);
+        player.setSaturation(20f);
         for (PotionEffect effect : player.getActivePotionEffects()) {
             player.removePotionEffect(effect.getType());
         }
@@ -192,6 +199,8 @@ public final class BuildArea {
         player.eject();
         player.leaveVehicle();
         player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
+        player.setFoodLevel(20);
+        player.setSaturation(20f);
         for (PotionEffect effect : player.getActivePotionEffects()) {
             player.removePotionEffect(effect.getType());
         }

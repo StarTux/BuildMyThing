@@ -16,6 +16,7 @@ import com.cavetale.core.struct.Vec3i;
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
@@ -34,9 +35,10 @@ import static net.kyori.adventure.title.Title.Times.times;
  *
  * I had ideas for improvement but do not remember them now.
  */
+@RequiredArgsConstructor
 public final class BuildBattleMode implements GameplayMode {
     private final Vec3i buildAreaSize = Vec3i.of(16, 16, 16);
-    private Game game;
+    private final Game game;
     private State state = State.INIT;
     private String itemName;
     private long seconds;
@@ -52,10 +54,13 @@ public final class BuildBattleMode implements GameplayMode {
     }
 
     @Override
-    public void enable(final Game theGame) {
-        this.game = theGame;
+    public void enable() {
+        itemName = game.getPlugin().getWordList().randomWord();
         ratingRegion = game.getRegionAllocator().allocateRegion();
         buildAreas = game.createOneBuildAreaPerPlayer(buildAreaSize);
+        for (BuildArea buildArea : buildAreas) {
+            buildArea.setItemName(itemName);
+        }
         stateMap.put(State.WARP, new WarpPlayerToBuildAreaPhase(game, buildAreas));
         stateMap.put(State.COUNTDOWN, new CountdownPhase(game, Duration.ofSeconds(10)));
         stateMap.put(State.BUILD, new BuildPhase(game, Duration.ofMinutes(3)));
@@ -63,7 +68,7 @@ public final class BuildBattleMode implements GameplayMode {
         stateMap.put(State.RATE, new RatePhase(game, buildAreas, Duration.ofSeconds(60)));
         stateMap.put(State.RANKING, new RankingPhase(game, buildAreas, buildAreaSize, 4, ratingRegion));
         stateMap.put(State.END, new PausePhase(Duration.ofSeconds(60)));
-        itemName = game.getPlugin().getWordList().randomWord();
+        game.bringAllPlayers(p -> { });
         setState(State.WARP);
     }
 

@@ -18,6 +18,7 @@ public final class BuildMyThingCommand extends AbstractCommand<BuildMyThingPlugi
             .playerCaller(this::rate);
         rootNode.addChild("guess").denyTabCompletion()
             .alias("suggest")
+            .alias("choose")
             .hidden(true)
             .description("Guess what a build is")
             .playerCaller(this::guess);
