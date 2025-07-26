@@ -96,6 +96,7 @@ public final class RatePhase extends TimedPhase {
         if (isFinished()) return;
         if (!game.isPlaying(player)) return;
         final GamePlayer gp = game.getGamePlayer(player);
+        if (gp.getRateIndex() >= gp.getRateAreaList().size()) return;
         final BuildArea buildArea = gp.getRateAreaList().get(gp.getRateIndex());
         new RateMenu(player, gp, buildArea).create().open();
     }

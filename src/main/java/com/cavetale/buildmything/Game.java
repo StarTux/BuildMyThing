@@ -113,7 +113,7 @@ public final class Game {
             for (GamePlayer gp : players.values()) {
                 names.add(gp.getName());
             }
-            final String command = "/ml add " + String.join(" ", names);
+            final String command = "ml add " + String.join(" ", names);
             plugin.getLogger().info("[" + name + "] Issuing command: " + command);
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
         }

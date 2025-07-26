@@ -65,9 +65,9 @@ public final class BuildBattleMode implements GameplayMode {
         stateMap.put(State.COUNTDOWN, new CountdownPhase(game, Duration.ofSeconds(10)));
         stateMap.put(State.BUILD, new BuildPhase(game, Duration.ofMinutes(3)));
         stateMap.put(State.POST_BUILD, new PausePhase(Duration.ofSeconds(5)));
-        stateMap.put(State.RATE, new RatePhase(game, buildAreas, Duration.ofSeconds(60)));
+        stateMap.put(State.RATE, new RatePhase(game, buildAreas, Duration.ofSeconds(game.getPlayers().size() * 7)));
         stateMap.put(State.RANKING, new RankingPhase(game, buildAreas, buildAreaSize, 4, ratingRegion));
-        stateMap.put(State.END, new PausePhase(Duration.ofSeconds(40)));
+        stateMap.put(State.END, new PausePhase(Duration.ofSeconds(20)));
         final Title title = Title.title(getTitle(), empty(), times(Duration.ofSeconds(2), Duration.ofSeconds(3), Duration.ofSeconds(1)));
         game.bringAllPlayers(player -> {
                 player.showTitle(title);

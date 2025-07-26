@@ -40,6 +40,7 @@ public final class TelephoneMode implements GameplayMode {
     private final List<Chain> chains = new ArrayList<>();
     // Length of each chain.
     private int chainLength;
+    private int eachChainLength;
     private int currentChainIndex;
     private int currentChainRank;
 
@@ -102,9 +103,10 @@ public final class TelephoneMode implements GameplayMode {
         final List<GamePlayer> fixedPlayerList = new ArrayList<>(game.getPlayingGamePlayers());
         Collections.shuffle(fixedPlayerList);
         chainLength = fixedPlayerList.size();
+        eachChainLength = Math.min(7, chainLength);
         for (int i = 0; i < chainLength; i += 1) {
             final List<GamePlayer> chainList = new ArrayList<>();
-            for (int j = 0; j < chainLength; j += 1) {
+            for (int j = 0; j < eachChainLength; j += 1) {
                 final int index = (i + j) % chainLength;
                 chainList.add(fixedPlayerList.get(index));
             }
@@ -214,7 +216,7 @@ public final class TelephoneMode implements GameplayMode {
             break;
         }
         case BUILD: {
-            final BuildPhase buildPhase = new BuildPhase(game, Duration.ofMinutes(2));
+            final BuildPhase buildPhase = new BuildPhase(game, Duration.ofMinutes(3));
             currentPhase = buildPhase;
             break;
         }
@@ -258,13 +260,13 @@ public final class TelephoneMode implements GameplayMode {
         if (currentPhase.isFinished()) {
             // The guess and build states loop until we have finished all the
             // chains.
-            if ((state == State.SUGGEST || state == State.GUESS || state == State.BUILD) && currentChainIndex + 1 >= chainLength) {
+            if ((state == State.SUGGEST || state == State.GUESS || state == State.BUILD) && currentChainIndex + 1 >= eachChainLength) {
                 // Exit loop
                 setState(State.POST_LOOP);
             } else if (state == State.RANK && currentChainRank < chains.size()) {
                 // Loop the rank
                 setState(State.RANK);
-            } else if (state == State.GUESS && currentChainIndex + 1 < chainLength) {
+            } else if (state == State.GUESS && currentChainIndex + 1 < eachChainLength) {
                 // Loop back
                 setState(State.PREPARE_BUILD);
             } else {

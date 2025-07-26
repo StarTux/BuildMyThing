@@ -31,6 +31,7 @@ public final class BuildMyThingCommand extends AbstractCommand<BuildMyThingPlugi
     }
 
     private boolean guess(Player player, String[] args) {
+        if (args.length == 0) return true;
         final Game game = Game.in(player.getWorld());
         if (game == null) return true;
         game.getMode().onGuessCommand(player, String.join(" ", args));

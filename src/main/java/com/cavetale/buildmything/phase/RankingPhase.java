@@ -87,8 +87,8 @@ public final class RankingPhase implements GamePhase {
         }
         currentBuildArea = targetAreas.get(buildAreaIndex);
         pauseTime = currentBuildArea.getGuessingPlayer() != null
-            ? now.plus(Duration.ofSeconds(10))
-            : now.plus(Duration.ofSeconds(20));
+            ? now.plus(Duration.ofSeconds(5))
+            : now.plus(Duration.ofSeconds(15));
         final BuildArea origArea = buildAreas.get(buildAreaIndex);
         final int rank = buildAreas.size() - buildAreaIndex;
         final Component rankNumber = Glyph.toComponent("" + rank);

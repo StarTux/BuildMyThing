@@ -111,7 +111,7 @@ public final class BuildArea {
         final World world = getWorld();
         for (int z = area.az; z <= area.bz; z += 1) {
             for (int x = area.ax; x <= area.bx; x += 1) {
-                final Block block = world.getBlockAt(x, area.ay - 2, z);
+                final Block block = world.getBlockAt(x, area.ay - 1, z);
                 block.setType(Material.GRASS_BLOCK);
                 frameBlocks.add(block);
             }
@@ -210,7 +210,7 @@ public final class BuildArea {
         for (int r : ratings.values()) {
             total += r;
         }
-        finalRating = ((double) total) / ((double) ratings.size()) * fairnessFactor;
+        finalRating = ((double) total) / ((double) ratings.size());
         region.getGame().getPlugin().getLogger().info("[" + region.getGame().getName() + "] Score " + owningPlayer.getName() + ": " + finalRating);
     }
 
