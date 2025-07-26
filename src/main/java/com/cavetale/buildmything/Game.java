@@ -169,7 +169,7 @@ public final class Game {
     }
 
     private void prepareWorld() {
-        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true);
+        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false);
         world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
         world.setGameRule(GameRule.LOCATOR_BAR, false);
         world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
