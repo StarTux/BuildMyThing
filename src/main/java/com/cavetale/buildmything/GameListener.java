@@ -6,6 +6,7 @@ import com.cavetale.core.event.hud.PlayerHudEvent;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
+import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -13,6 +14,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 
 @RequiredArgsConstructor
 public final class GameListener implements Listener {
@@ -62,6 +65,32 @@ public final class GameListener implements Listener {
         }
         if (!game.playerCanBuild(player, block)) {
             event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Avoid falling blocks.
+     */
+    @EventHandler(priority = EventPriority.LOW)
+    private void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        final Game game = Game.in(event.getEntity().getWorld());
+        if (game == null) return;
+        if (event.getEntity() instanceof FallingBlock && event.getTo().isAir()) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Avoid falling blocks.
+     */
+    @EventHandler
+    private void onEntitySpawn(EntitySpawnEvent event) {
+        final Game game = Game.in(event.getEntity().getWorld());
+        if (game == null) return;
+        switch (event.getEntity().getType()) {
+        case FALLING_BLOCK:
+            event.setCancelled(true);
+        default: break;
         }
     }
 }
