@@ -12,6 +12,7 @@ depend:
 - Core
 - VoidGenerator
 - Creative
+- Fam
 
 softdepend: []
 

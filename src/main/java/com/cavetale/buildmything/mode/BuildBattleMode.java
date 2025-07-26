@@ -68,7 +68,13 @@ public final class BuildBattleMode implements GameplayMode {
         stateMap.put(State.RATE, new RatePhase(game, buildAreas, Duration.ofSeconds(60)));
         stateMap.put(State.RANKING, new RankingPhase(game, buildAreas, buildAreaSize, 4, ratingRegion));
         stateMap.put(State.END, new PausePhase(Duration.ofSeconds(60)));
-        game.bringAllPlayers(p -> { });
+        final Title title = Title.title(getTitle(), empty(), times(Duration.ofSeconds(2), Duration.ofSeconds(3), Duration.ofSeconds(1)));
+        game.bringAllPlayers(player -> {
+                player.showTitle(title);
+                player.sendMessage(empty());
+                player.sendMessage(getTitle());
+                player.sendMessage(text(getDescription(), WHITE));
+            });
         setState(State.WARP);
     }
 
@@ -93,6 +99,17 @@ public final class BuildBattleMode implements GameplayMode {
                 if (gp.getBuildArea() == null) continue;
                 gp.getBuildArea().removeFrame();
                 gp.getBuildArea().createTextLabel(text(itemName, GOLD));
+                if (game.isEvent() && gp.getBuildArea().countBlocks() > 10) {
+                    game.addScore(gp, 10);
+                }
+            }
+            break;
+        case RATE:
+            if (game.isEvent()) {
+                for (GamePlayer gp : game.getAllGamePlayers()) {
+                    if (gp.getBuildArea() == null && gp.getBuildArea().getFinalRating() > 1.0) continue;
+                    game.addScore(gp, (int) Math.round(gp.getBuildArea().getFinalRating() * 2.0));
+                }
             }
             break;
         default: break;

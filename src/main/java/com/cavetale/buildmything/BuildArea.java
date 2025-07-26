@@ -3,6 +3,7 @@ package com.cavetale.buildmything;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec2i;
 import com.cavetale.core.struct.Vec3d;
+import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.item.axis.CuboidOutline;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,29 +87,21 @@ public final class BuildArea {
 
     public void placeFrame() {
         final World world = getWorld();
-        final Material a = Material.CYAN_CONCRETE;
-        final Material b = Material.MAGENTA_CONCRETE;
+        // Floor
         for (int z = area.az; z <= area.bz; z += 1) {
             for (int x = area.ax; x <= area.bx; x += 1) {
                 final int y = area.ay - 1;
                 final Block block = world.getBlockAt(x, y, z);
-                block.setType((x & 1) == (z & 1) ? a : b, false);
+                block.setType((x & 1) == (z & 1) ? Material.CYAN_CONCRETE : Material.MAGENTA_CONCRETE, false);
                 frameBlocks.add(block);
             }
         }
+        // Back wall
         for (int y = area.ay; y <= area.by; y += 1) {
             for (int x = area.ax; x <= area.bx; x += 1) {
                 final int z = area.az - 1;
                 final Block block = world.getBlockAt(x, y, z);
-                block.setType((x & 1) == (y & 1) ? a : b, false);
-                frameBlocks.add(block);
-            }
-        }
-        for (int y = area.ay; y <= area.by; y += 1) {
-            for (int z = area.az; z <= area.bz; z += 1) {
-                final int x = area.ax - 1;
-                final Block block = world.getBlockAt(x, y, z);
-                block.setType((y & 1) == (z & 1) ? a : b, false);
+                block.setType(Material.WHITE_STAINED_GLASS, false);
                 frameBlocks.add(block);
             }
         }
@@ -237,5 +230,15 @@ public final class BuildArea {
                         palette,
                         integrity,
                         ThreadLocalRandom.current());
+    }
+
+    public int countBlocks() {
+        int blocks = 0;
+        for (Vec3i vector : area.enumerate()) {
+            if (!vector.toBlock(region.getGame().getWorld()).isEmpty()) {
+                blocks += 1;
+            }
+        }
+        return blocks;
     }
 }

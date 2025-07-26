@@ -15,10 +15,10 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 public enum GameplayType {
     BUILD_BATTLE(BuildBattleMode::new,
                  textOfChildren(text("Build ", BLUE), text("Battle", GOLD)),
-                 "We all build the same item and then judge every build"),
+                 "We all build the same item and then judge every build."),
     TELEPHONE(TelephoneMode::new,
               text("Telephone", LIGHT_PURPLE),
-              "We build, we guess, we build again"),
+              "We build, we guess, we build again."),
     ;
 
     private final Function<Game, GameplayMode> gameModeSupplier;

@@ -108,6 +108,15 @@ public final class Game {
                 spawnRegion = regionAllocator.allocateRegion();
                 mode.enable();
             });
+        if (isEvent()) {
+            final List<String> names = new ArrayList<>();
+            for (GamePlayer gp : players.values()) {
+                names.add(gp.getName());
+            }
+            final String command = "/ml add " + String.join(" ", names);
+            plugin.getLogger().info("[" + name + "] Issuing command: " + command);
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+        }
     }
 
     public void disable() {
@@ -283,5 +292,14 @@ public final class Game {
             player.teleport(location);
             callback.accept(player);
         }
+    }
+
+    public boolean isEvent() {
+        return plugin.getTag().isEvent();
+    }
+
+    public void addScore(GamePlayer gp, int value) {
+        plugin.getTag().addScore(gp.getUuid(), 1);
+        plugin.updateHighscoreLater();
     }
 }

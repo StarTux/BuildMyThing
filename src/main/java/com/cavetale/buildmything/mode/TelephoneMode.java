@@ -21,12 +21,15 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.title.Title;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import static com.cavetale.core.font.Unicode.tiny;
+import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.title.Title.Times.times;
 
 @RequiredArgsConstructor
 public final class TelephoneMode implements GameplayMode {
@@ -44,12 +47,14 @@ public final class TelephoneMode implements GameplayMode {
         INIT,
         COUNTDOWN,
         SUGGEST,
+        // Begin Loop
         PREPARE_BUILD,
         BUILD,
         POST_BUILD,
         GUESS,
+        // End Loop
         POST_LOOP,
-        RANK,
+        RANK, // Loop on itself
         END,
         ;
 
@@ -105,7 +110,15 @@ public final class TelephoneMode implements GameplayMode {
             }
             chains.add(new Chain(chainList));
         }
-        game.bringAllPlayers(p -> p.setGameMode(GameMode.ADVENTURE));
+        final Title title = Title.title(getTitle(), empty(), times(Duration.ofSeconds(2), Duration.ofSeconds(3), Duration.ofSeconds(1)));
+        game.bringAllPlayers(player -> {
+                player.setGameMode(GameMode.ADVENTURE);
+                player.showTitle(title);
+                player.sendMessage(empty());
+                player.sendMessage(getTitle());
+                player.sendMessage(text(getDescription(), WHITE));
+                player.sendMessage(empty());
+            });
         setState(State.COUNTDOWN);
     }
 
@@ -125,6 +138,8 @@ public final class TelephoneMode implements GameplayMode {
                     String word = suggestPhase.getWords().get(chain.getCurrentPlayer().getUuid());
                     if (word == null) {
                         word = game.getPlugin().getWordList().randomWord();
+                    } else if (game.isEvent()) {
+                        game.addScore(chain.getCurrentPlayer(), 10);
                     }
                     chain.pushWord(word);
                 }
@@ -137,6 +152,8 @@ public final class TelephoneMode implements GameplayMode {
                     String word = guessPhase.getWords().get(chain.getCurrentPlayer().getUuid());
                     if (word == null) {
                         word = game.getPlugin().getWordList().randomWord();
+                    } else if (game.isEvent()) {
+                        game.addScore(chain.getCurrentPlayer(), 10);
                     }
                     chain.pushWord(word);
                     chain.currentArea.setGuessName(word);
@@ -147,6 +164,11 @@ public final class TelephoneMode implements GameplayMode {
             currentChainIndex += 1;
             for (Chain chain : chains) {
                 chain.currentArea.removeFrame();
+                if (game.isEvent()) {
+                    if (chain.currentArea.countBlocks() > 10) {
+                        game.addScore(chain.currentPlayer, 10);
+                    }
+                }
             }
             break;
         default:
@@ -237,11 +259,14 @@ public final class TelephoneMode implements GameplayMode {
             // The guess and build states loop until we have finished all the
             // chains.
             if ((state == State.SUGGEST || state == State.GUESS || state == State.BUILD) && currentChainIndex + 1 >= chainLength) {
+                // Exit loop
                 setState(State.POST_LOOP);
             } else if (state == State.RANK && currentChainRank < chains.size()) {
+                // Loop the rank
                 setState(State.RANK);
             } else if (state == State.GUESS && currentChainIndex + 1 < chainLength) {
-                setState(State.BUILD);
+                // Loop back
+                setState(State.PREPARE_BUILD);
             } else {
                 setState(state.next());
             }
@@ -265,9 +290,10 @@ public final class TelephoneMode implements GameplayMode {
         case BUILD:
         case GUESS:
             sidebar.add(textOfChildren(text(tiny("time "), DARK_GRAY), text(timed.getSecondsRemaining(), WHITE)));
-            break;
-        default:
-            break;
+        default: break;
+        }
+        if (state == State.BUILD) {
+            sidebar.add(textOfChildren(text(tiny("build "), DARK_GRAY), text(gp.getBuildArea().getItemName(), WHITE)));
         }
     }
 

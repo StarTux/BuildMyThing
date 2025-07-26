@@ -3,7 +3,11 @@ package com.cavetale.buildmything;
 import com.cavetale.buildmything.mode.GameplayType;
 import com.cavetale.core.command.AbstractCommand;
 import com.cavetale.core.command.CommandArgCompleter;
+import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
+import com.cavetale.core.playercache.PlayerCache;
+import com.cavetale.fam.trophy.Highscore;
+import com.cavetale.mytems.item.trophy.TrophyCategory;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -19,6 +23,9 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
     @Override
     protected void onEnable() {
         rootNode.description("Build my Thing admin command");
+        rootNode.addChild("reload").denyTabCompletion()
+            .description("Reload the tag")
+            .senderCaller(this::reload);
         rootNode.addChild("start").arguments("[type]")
             .completers(CommandArgCompleter.enumLowerList(GameplayType.class))
             .description("Start a game")
@@ -26,6 +33,28 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
         rootNode.addChild("skip").denyTabCompletion()
             .description("Skip something")
             .playerCaller(this::skip);
+        final CommandNode scoreNode = rootNode.addChild("score")
+            .description("Score commands");
+        scoreNode.addChild("clear").denyTabCompletion()
+            .description("Clear all scores")
+            .senderCaller(this::scoreClear);
+        rootNode.addChild("event").arguments("[true|false]")
+            .completers(CommandArgCompleter.BOOLEAN)
+            .description("Set event mode")
+            .senderCaller(this::event);
+        scoreNode.addChild("reward").denyTabCompletion()
+            .description("Reward all scores")
+            .senderCaller(this::scoreReward);
+        scoreNode.addChild("add")
+            .description("Manipulate score")
+            .completers(PlayerCache.NAME_COMPLETER,
+                        CommandArgCompleter.integer(i -> i != 0))
+            .senderCaller(this::scoreAdd);
+    }
+
+    private void reload(CommandSender sender) {
+        plugin.loadTag();
+        sender.sendMessage(text("Tag reloaded", YELLOW));
     }
 
     private boolean start(CommandSender sender, String[] args) {
@@ -52,5 +81,43 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
         if (game == null) throw new CommandWarn("There is no game here");
         player.sendMessage(text("Trying to skip in game " + game.getName() + "...", YELLOW));
         game.getMode().skip();
+    }
+
+    private void scoreClear(CommandSender sender) {
+        plugin.getTag().getScores().clear();
+        plugin.computeHighscore();
+        sender.sendMessage(text("Scores cleared", YELLOW));
+    }
+
+    private boolean event(CommandSender sender, String[] args) {
+        if (args.length > 1) return false;
+        if (args.length == 1) {
+            plugin.getTag().setEvent(CommandArgCompleter.requireBoolean(args[0]));
+            plugin.saveTag();
+        }
+        sender.sendMessage(textOfChildren(text("Event mode: ", YELLOW),
+                                          (plugin.getTag().isEvent()
+                                           ? text("Yes", GREEN)
+                                           : text("No", RED))));
+        return true;
+    }
+
+    private void scoreReward(CommandSender sender) {
+        final int count = Highscore.reward(plugin.getTag().getScores(),
+                                           "build_my_thing",
+                                           TrophyCategory.CUP,
+                                           plugin.getTitle(),
+                                           hi -> "You scored " + hi.score + " points");
+        sender.sendMessage(text(count + " players rewarded with trophies", YELLOW));
+    }
+
+    private boolean scoreAdd(CommandSender sender, String[] args) {
+        if (args.length != 2) return false;
+        PlayerCache target = PlayerCache.require(args[0]);
+        int value = CommandArgCompleter.requireInt(args[1], i -> i != 0);
+        plugin.getTag().addScore(target.uuid, value);
+        plugin.computeHighscore();
+        sender.sendMessage(text("Score of " + target.name + " manipulated by " + value, AQUA));
+        return true;
     }
 }

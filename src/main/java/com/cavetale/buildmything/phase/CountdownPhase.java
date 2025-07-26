@@ -3,12 +3,10 @@ package com.cavetale.buildmything.phase;
 import com.cavetale.buildmything.Game;
 import java.time.Duration;
 import lombok.Getter;
-import net.kyori.adventure.title.Title;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
-import static net.kyori.adventure.title.Title.Times.times;
-import static net.kyori.adventure.title.Title.title;
 
 @Getter
 public final class CountdownPhase extends TimedPhase {
@@ -31,13 +29,9 @@ public final class CountdownPhase extends TimedPhase {
 
     @Override
     public void onSecondsRemainingChanged() {
-        final Title title = title(text(""),
-                                  text(getSecondsRemaining(), GREEN),
-                                  times(Duration.ofSeconds(0),
-                                        Duration.ofMillis(500),
-                                        Duration.ofMillis(500)));
+        final Component message = text(getSecondsRemaining(), GRAY);
         for (Player player : game.getPresentPlayers()) {
-            player.showTitle(title);
+            player.sendActionBar(message);
         }
     }
 }

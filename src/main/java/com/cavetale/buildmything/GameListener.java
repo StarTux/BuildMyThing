@@ -44,6 +44,10 @@ public final class GameListener implements Listener {
 
     @EventHandler
     private void onPlayerHud(PlayerHudEvent event) {
+        if (event.getPlayer().getWorld().equals(Bukkit.getWorlds().get(0))) {
+            plugin.onPlayerHud(event);
+            return;
+        }
         final Game game = Game.in(event.getPlayer().getWorld());
         if (game == null || game.getMode() == null) return;
         game.onPlayerHud(event);
