@@ -173,6 +173,7 @@ public final class Game {
         world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
         world.setGameRule(GameRule.LOCATOR_BAR, false);
         world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
         world.setTime(6000L);
         world.setPVP(false);
     }
