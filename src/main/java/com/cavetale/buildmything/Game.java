@@ -299,7 +299,7 @@ public final class Game {
     }
 
     public void addScore(GamePlayer gp, int value) {
-        plugin.getTag().addScore(gp.getUuid(), 1);
+        plugin.getTag().addScore(gp.getUuid(), value);
         plugin.updateHighscoreLater();
     }
 }
