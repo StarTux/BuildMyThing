@@ -13,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
@@ -71,7 +72,7 @@ public final class GameListener implements Listener {
     /**
      * Avoid falling blocks.
      */
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler
     private void onEntityChangeBlock(EntityChangeBlockEvent event) {
         final Game game = Game.in(event.getEntity().getWorld());
         if (game == null) return;
@@ -91,6 +92,20 @@ public final class GameListener implements Listener {
         case FALLING_BLOCK:
             event.setCancelled(true);
         default: break;
+        }
+    }
+
+    /**
+     * Avoid spill.
+     */
+    @EventHandler
+    private void onBlockFromTo(BlockFromToEvent event) {
+        final Game game = Game.in(event.getBlock().getWorld());
+        if (game == null) return;
+        final BuildArea buildArea = game.findBuildAreaAt(event.getBlock());
+        if (buildArea == null || !buildArea.getArea().contains(event.getToBlock())) {
+            event.setCancelled(true);
+            return;
         }
     }
 }

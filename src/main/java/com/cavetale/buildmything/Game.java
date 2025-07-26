@@ -69,6 +69,11 @@ public final class Game {
     @Setter private boolean buildingAllowed;
     @Setter private boolean finished;
     private GameRegion spawnRegion;
+    /**
+     * These areas will be watched by GameListener to protect water
+     * overflow and such.
+     */
+    private List<BuildArea> buildAreas = new ArrayList<>();
 
     public GamePlayer addPlayer(Player player) {
         plugin.getLogger().info("[" + name + "] Adding player: " + player.getName());
@@ -169,13 +174,15 @@ public final class Game {
     }
 
     private void prepareWorld() {
-        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, false);
+        world.setGameRule(GameRule.SPECTATORS_GENERATE_CHUNKS, true);
         world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
         world.setGameRule(GameRule.LOCATOR_BAR, false);
         world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
         world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
         world.setTime(6000L);
         world.setPVP(false);
+        world.setViewDistance(5);
+        world.setSimulationDistance(2);
     }
 
     /**
@@ -246,6 +253,7 @@ public final class Game {
             gp.setBuildArea(buildArea);
             result.add(buildArea);
         }
+        buildAreas.addAll(result);
         return result;
     }
 
@@ -302,5 +310,12 @@ public final class Game {
     public void addScore(GamePlayer gp, int value) {
         plugin.getTag().addScore(gp.getUuid(), value);
         plugin.updateHighscoreLater();
+    }
+
+    public BuildArea findBuildAreaAt(Block block) {
+        for (BuildArea buildArea : buildAreas) {
+            if (buildArea.getArea().contains(block)) return buildArea;
+        }
+        return null;
     }
 }
