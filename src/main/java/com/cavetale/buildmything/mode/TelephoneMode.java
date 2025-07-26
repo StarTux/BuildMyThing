@@ -243,7 +243,7 @@ public final class TelephoneMode implements GameplayMode {
             break;
         }
         case END:
-            currentPhase = new PausePhase(Duration.ofSeconds(60));
+            currentPhase = new PausePhase(Duration.ofSeconds(20));
             break;
         default:
             throw new IllegalStateException("newState=" + newState);

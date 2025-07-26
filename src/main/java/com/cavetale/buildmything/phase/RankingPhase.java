@@ -17,6 +17,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.newline;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
@@ -41,6 +42,7 @@ public final class RankingPhase implements GamePhase {
     private List<BuildArea> targetAreas;
     private int waiting = 0;
     private boolean useRanks = true;
+    private boolean guessShown = false;
 
     @Override
     public void start() {
@@ -65,17 +67,33 @@ public final class RankingPhase implements GamePhase {
         if (waiting > 0) return;
         final Instant now = Instant.now();
         if (pauseTime != null && now.isBefore(pauseTime)) return;
+        if (currentBuildArea != null && !guessShown && currentBuildArea.getGuessingPlayer() != null) {
+            pauseTime = now.plus(Duration.ofSeconds(10));
+            guessShown = true;
+            final Component guess = textOfChildren(text(currentBuildArea.getGuessingPlayer().getName(), WHITE),
+                                                   text(" guessed ", GRAY),
+                                                   text("\"" + currentBuildArea.getGuessName() + "\"", GOLD));
+            for (Player player : game.getPresentPlayers()) {
+                player.sendMessage(empty());
+                player.sendMessage(guess);
+                player.sendMessage(empty());
+            }
+            return;
+        }
         buildAreaIndex += 1;
         if (buildAreaIndex >= buildAreas.size()) {
             finished = true;
             return;
         }
-        pauseTime = now.plus(Duration.ofSeconds(20));
+        currentBuildArea = targetAreas.get(buildAreaIndex);
+        pauseTime = currentBuildArea.getGuessingPlayer() != null
+            ? now.plus(Duration.ofSeconds(10))
+            : now.plus(Duration.ofSeconds(20));
         final BuildArea origArea = buildAreas.get(buildAreaIndex);
         final int rank = buildAreas.size() - buildAreaIndex;
         final Component rankNumber = Glyph.toComponent("" + rank);
+        guessShown = false;
         // Make a copy
-        currentBuildArea = targetAreas.get(buildAreaIndex);
         currentBuildArea.cloneDataFrom(origArea);
         final Title title = Title.title(useRanks ? rankNumber : empty(),
                                         text(currentBuildArea.getOwningPlayer().getName(), BLUE),
@@ -88,13 +106,19 @@ public final class RankingPhase implements GamePhase {
                                      text(" " + currentBuildArea.getOwningPlayer().getName(), BLUE));
         } else {
             message = textOfChildren(text(currentBuildArea.getItemName(), GOLD),
-                                     text(" | ", DARK_GRAY),
+                                     text(" built by ", GRAY),
                                      text(currentBuildArea.getOwningPlayer().getName(), BLUE));
         }
         origArea.copyTo(currentBuildArea);
-        currentBuildArea.createTextLabel(text(currentBuildArea.getOwningPlayer().getName()));
+        if (useRanks) {
+            currentBuildArea.createTextLabel(text(currentBuildArea.getOwningPlayer().getName()));
+        } else {
+            currentBuildArea.createTextLabel(textOfChildren(text("\"" + currentBuildArea.getItemName() + "\"", GOLD),
+                                                            newline(),
+                                                            text(currentBuildArea.getOwningPlayer().getName(), WHITE)));
+        }
         sidebar.add(0, message);
-        for (Player player : game.getOnlinePlayers()) {
+        for (Player player : game.getPresentPlayers()) {
             currentBuildArea.bringViewer(player);
             player.setGameMode(GameMode.SPECTATOR);
             player.setAllowFlight(true);

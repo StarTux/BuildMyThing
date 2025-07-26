@@ -33,6 +33,9 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
         rootNode.addChild("skip").denyTabCompletion()
             .description("Skip something")
             .playerCaller(this::skip);
+        rootNode.addChild("stop").denyTabCompletion()
+            .description("Stop this game")
+            .playerCaller(this::stop);
         final CommandNode scoreNode = rootNode.addChild("score")
             .description("Score commands");
         scoreNode.addChild("clear").denyTabCompletion()
@@ -81,6 +84,13 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
         if (game == null) throw new CommandWarn("There is no game here");
         player.sendMessage(text("Trying to skip in game " + game.getName() + "...", YELLOW));
         game.getMode().skip();
+    }
+
+    private void stop(Player player) {
+        final Game game = Game.in(player.getWorld());
+        if (game == null) throw new CommandWarn("There is no game here");
+        player.sendMessage(text("Trying to stop game " + game.getName() + "...", YELLOW));
+        game.setFinished(true);
     }
 
     private void scoreClear(CommandSender sender) {
