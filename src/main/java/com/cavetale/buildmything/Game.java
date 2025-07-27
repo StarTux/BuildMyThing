@@ -181,7 +181,7 @@ public final class Game {
         world.setGameRule(GameRule.RANDOM_TICK_SPEED, 0);
         world.setTime(6000L);
         world.setPVP(false);
-        world.setViewDistance(5);
+        world.setViewDistance(3);
         world.setSimulationDistance(2);
     }
 
