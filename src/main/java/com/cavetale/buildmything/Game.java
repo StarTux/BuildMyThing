@@ -33,6 +33,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.util.Vector;
 import static com.cavetale.buildmything.BuildMyThingPlugin.buildMyThingPlugin;
 import static com.cavetale.core.font.Unicode.tiny;
 import static com.cavetale.mytems.util.Text.wrapLine;
@@ -141,6 +142,8 @@ public final class Game {
                 }
                 player.getInventory().clear();
                 player.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
+                player.setVelocity(new Vector());
+                player.setFallDistance(0f);
             }
             Files.deleteWorld(world);
             world = null;
@@ -285,20 +288,25 @@ public final class Game {
         return world.getSpawnLocation();
     }
 
+    public void bringPlayer(Player player) {
+        player.eject();
+        player.leaveVehicle();
+        player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
+        player.setFoodLevel(20);
+        player.setSaturation(20f);
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            player.removePotionEffect(effect.getType());
+        }
+        player.teleport(getSpawnLocation());
+        player.setVelocity(new Vector());
+        player.setFallDistance(0f);
+    }
+
     public void bringAllPlayers(Consumer<Player> callback) {
-        final Location location = getSpawnLocation();
         for (GamePlayer gp : players.values()) {
             final Player player = gp.getPlayer();
             if (player == null) continue;
-            player.eject();
-            player.leaveVehicle();
-            player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
-            player.setFoodLevel(20);
-            player.setSaturation(20f);
-            for (PotionEffect effect : player.getActivePotionEffects()) {
-                player.removePotionEffect(effect.getType());
-            }
-            player.teleport(location);
+            bringPlayer(player);
             callback.accept(player);
         }
     }

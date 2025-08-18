@@ -6,6 +6,7 @@ import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.destroystokyo.paper.MaterialTags;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
@@ -25,6 +26,7 @@ import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 @RequiredArgsConstructor
 public final class GameListener implements Listener {
@@ -169,5 +171,22 @@ public final class GameListener implements Listener {
             event.getEntity().setSilent(true);
         default: break;
         }
+    }
+
+    /**
+     * If a player spawns late during an event, we bring them to the
+     * current game spawn.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    private void onPlayerJoinDuringEvent(PlayerJoinEvent event) {
+        if (!plugin.getTag().isEvent()) return;
+        final Player player = event.getPlayer();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (!player.isValid()) return;
+                if (Game.in(player.getWorld()) != null) return;
+                if (plugin.getGames().isEmpty()) return;
+                plugin.getGames().get(0).bringPlayer(player);
+                player.setGameMode(GameMode.SPECTATOR);
+            }, 20L);
     }
 }
