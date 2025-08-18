@@ -107,8 +107,8 @@ public final class BuildBattleMode implements GameplayMode {
         case RATE:
             if (game.isEvent()) {
                 for (GamePlayer gp : game.getAllGamePlayers()) {
-                    if (gp.getBuildArea() == null && gp.getBuildArea().getFinalRating() > 1.0) continue;
-                    game.addScore(gp, (int) Math.round(gp.getBuildArea().getFinalRating() * 2.0));
+                    if (gp.getBuildArea() == null) continue;
+                    game.addScore(gp, (int) Math.round(gp.getBuildArea().getFinalRating() * 20.0));
                 }
             }
             break;
