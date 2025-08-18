@@ -3,6 +3,7 @@ package com.cavetale.buildmything;
 import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.block.PlayerBreakBlockEvent;
 import com.cavetale.core.event.hud.PlayerHudEvent;
+import com.cavetale.core.event.player.PlayerTPAEvent;
 import com.destroystokyo.paper.MaterialTags;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
@@ -188,5 +189,17 @@ public final class GameListener implements Listener {
                 plugin.getGames().get(0).bringPlayer(player);
                 player.setGameMode(GameMode.SPECTATOR);
             }, 20L);
+    }
+
+    /**
+     * Deny TPA unless player is in the lobby.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    private void onPlayerTPA(PlayerTPAEvent event) {
+        if (event.getTarget().getWorld().equals(Bukkit.getWorlds().get(0))) {
+            // Lobby
+            return;
+        }
+        event.setCancelled(true);
     }
 }
