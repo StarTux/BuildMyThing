@@ -124,7 +124,9 @@ public final class RankingPhase implements GamePhase {
             player.setAllowFlight(true);
             player.setFlying(true);
             player.showTitle(title);
+            player.sendMessage(empty());
             player.sendMessage(message);
+            player.sendMessage(empty());
             if (useRanks && rank == 1) {
                 player.playSound(player, Sound.ENTITY_ENDER_DRAGON_DEATH, 0.5f, 2f);
             }

@@ -18,6 +18,7 @@ public final class GamePlayer {
     private BuildArea buildArea;
     private BuildArea guessArea;
     private boolean playing = false;
+    private boolean didBuild = false;
     // RatePhase
     private List<BuildArea> rateAreaList;
     private int rateIndex;

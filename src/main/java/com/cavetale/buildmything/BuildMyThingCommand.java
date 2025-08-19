@@ -22,6 +22,11 @@ public final class BuildMyThingCommand extends AbstractCommand<BuildMyThingPlugi
             .hidden(true)
             .description("Guess what a build is")
             .playerCaller(this::guess);
+        rootNode.addChild("vote").arguments("[type]")
+            .denyTabCompletion()
+            .hidden(true)
+            .description("Vote for a Game Mode")
+            .playerCaller(this::vote);
     }
 
     private void rate(Player player) {
@@ -35,6 +40,16 @@ public final class BuildMyThingCommand extends AbstractCommand<BuildMyThingPlugi
         final Game game = Game.in(player.getWorld());
         if (game == null) return true;
         game.getMode().onGuessCommand(player, String.join(" ", args));
+        return true;
+    }
+
+    private boolean vote(Player player, String[] args) {
+        if (plugin.getGameVote() == null) return true;
+        if (args.length == 0) {
+            plugin.getGameVote().open(player);
+        } else {
+            plugin.getGameVote().onVote(player, String.join(" ", args));
+        }
         return true;
     }
 }

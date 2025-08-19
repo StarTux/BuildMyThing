@@ -1,5 +1,6 @@
 package com.cavetale.buildmything;
 
+import com.cavetale.afk.AFKPlugin;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.util.Json;
@@ -9,8 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import static com.cavetale.core.font.Unicode.tiny;
 import static net.kyori.adventure.text.Component.text;
@@ -31,6 +34,7 @@ public final class BuildMyThingPlugin extends JavaPlugin {
     private File tagFile;
     private Tag tag;
     private boolean doUpdateHighscore;
+    @Setter private GameVote gameVote;
 
     public BuildMyThingPlugin() {
         instance = this;
@@ -43,6 +47,7 @@ public final class BuildMyThingPlugin extends JavaPlugin {
         Bukkit.getScheduler().runTaskTimer(this, this::tick, 1L, 1L);
         wordList.load();
         new GameListener(this).enable();
+        new LobbyListener(this).enable();
         tagFile = new File(getDataFolder(), "tag.json");
         loadTag();
         computeHighscore();
@@ -88,6 +93,28 @@ public final class BuildMyThingPlugin extends JavaPlugin {
             doUpdateHighscore = false;
             computeHighscore();
         }
+        // Start or stop game vote.
+        int availablePlayers = 0;
+        for (Player player : Bukkit.getWorlds().get(0).getPlayers()) {
+            if (!player.hasPermission("buildmything.buildmything")) continue;
+            if (!tag.isEvent() && AFKPlugin.isAfk(player)) continue;
+            if (Game.of(player) != null) continue;
+            availablePlayers += 1;
+        }
+        if (availablePlayers > 1 && !tag.isPause() && games.isEmpty()) {
+            // Start a vote
+            if (gameVote == null) {
+                gameVote = new GameVote(this);
+                gameVote.enable();
+            }
+            gameVote.tick();
+        } else {
+            // Stop a vote
+            if (gameVote != null) {
+                gameVote.disable();
+                gameVote = null;
+            }
+        }
     }
 
     public static BuildMyThingPlugin buildMyThingPlugin() {
@@ -114,6 +141,9 @@ public final class BuildMyThingPlugin extends JavaPlugin {
             lines.addAll(highscoreLines);
         }
         event.sidebar(PlayerHudPriority.DEFAULT, lines);
+        if (gameVote != null) {
+            gameVote.onPlayerHud(event);
+        }
     }
 
     public void updateHighscoreLater() {

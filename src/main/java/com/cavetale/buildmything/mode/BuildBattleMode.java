@@ -74,6 +74,7 @@ public final class BuildBattleMode implements GameplayMode {
                 player.sendMessage(empty());
                 player.sendMessage(getTitle());
                 player.sendMessage(text(getDescription(), WHITE));
+                player.sendMessage(empty());
             });
         setState(State.WARP);
     }
@@ -99,8 +100,11 @@ public final class BuildBattleMode implements GameplayMode {
                 if (gp.getBuildArea() == null) continue;
                 gp.getBuildArea().removeFrame();
                 gp.getBuildArea().createTextLabel(text(itemName, GOLD));
-                if (game.isEvent() && gp.getBuildArea().countBlocks() > 10) {
-                    game.addScore(gp, 10);
+                if (gp.getBuildArea().countBlocks() > 10) {
+                    gp.setDidBuild(true);
+                    if (game.isEvent()) {
+                        game.addScore(gp, 10);
+                    }
                 }
             }
             break;
@@ -135,6 +139,9 @@ public final class BuildBattleMode implements GameplayMode {
                 player.sendMessage(message);
                 player.sendMessage(empty());
             }
+            break;
+        case END:
+            game.onCompleteGame();
             break;
         default: break;
         }

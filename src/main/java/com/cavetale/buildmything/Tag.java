@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 @Data
 public final class Tag implements Serializable {
     private boolean event;
+    private boolean pause;
     private Map<UUID, Integer> scores = new HashMap<>();
 
     public void addScore(UUID uuid, int value) {

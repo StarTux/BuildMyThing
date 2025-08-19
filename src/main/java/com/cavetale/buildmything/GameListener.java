@@ -105,10 +105,6 @@ public final class GameListener implements Listener {
 
     @EventHandler
     private void onPlayerHud(PlayerHudEvent event) {
-        if (event.getPlayer().getWorld().equals(Bukkit.getWorlds().get(0))) {
-            plugin.onPlayerHud(event);
-            return;
-        }
         final Game game = Game.in(event.getPlayer().getWorld());
         if (game == null || game.getMode() == null) return;
         game.onPlayerHud(event);
@@ -192,14 +188,12 @@ public final class GameListener implements Listener {
     }
 
     /**
-     * Deny TPA unless player is in the lobby.
+     * Deny TPA if player is in a game.
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     private void onPlayerTPA(PlayerTPAEvent event) {
-        if (event.getTarget().getWorld().equals(Bukkit.getWorlds().get(0))) {
-            // Lobby
-            return;
+        if (Game.in(event.getTarget().getWorld()) != null) {
+            event.setCancelled(true);
         }
-        event.setCancelled(true);
     }
 }

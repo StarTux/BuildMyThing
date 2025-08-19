@@ -141,7 +141,7 @@ public final class TelephoneMode implements GameplayMode {
                     if (word == null) {
                         word = game.getPlugin().getWordList().randomWord();
                     } else if (game.isEvent()) {
-                        game.addScore(chain.getCurrentPlayer(), 10);
+                        game.addScore(chain.getCurrentPlayer(), 5);
                     }
                     chain.pushWord(word);
                 }
@@ -155,7 +155,7 @@ public final class TelephoneMode implements GameplayMode {
                     if (word == null) {
                         word = game.getPlugin().getWordList().randomWord();
                     } else if (game.isEvent()) {
-                        game.addScore(chain.getCurrentPlayer(), 10);
+                        game.addScore(chain.getCurrentPlayer(), 5);
                     }
                     chain.pushWord(word);
                     chain.currentArea.setGuessName(word);
@@ -166,10 +166,11 @@ public final class TelephoneMode implements GameplayMode {
             currentChainIndex += 1;
             for (Chain chain : chains) {
                 chain.currentArea.removeFrame();
-                if (game.isEvent()) {
-                    if (chain.currentArea.countBlocks() > 10) {
+                if (chain.currentArea.countBlocks() > 10) {
+                    if (game.isEvent()) {
                         game.addScore(chain.currentPlayer, 10);
                     }
+                    chain.currentPlayer.setDidBuild(true);
                 }
             }
             break;
@@ -246,6 +247,7 @@ public final class TelephoneMode implements GameplayMode {
         }
         case END:
             currentPhase = new PausePhase(Duration.ofSeconds(20));
+            game.onCompleteGame();
             break;
         default:
             throw new IllegalStateException("newState=" + newState);

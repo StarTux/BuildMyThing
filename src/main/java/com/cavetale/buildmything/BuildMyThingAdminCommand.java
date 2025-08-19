@@ -45,6 +45,10 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
             .completers(CommandArgCompleter.BOOLEAN)
             .description("Set event mode")
             .senderCaller(this::event);
+        rootNode.addChild("pause").arguments("[true|false]")
+            .completers(CommandArgCompleter.BOOLEAN)
+            .description("Set pause mode")
+            .senderCaller(this::pause);
         scoreNode.addChild("reward").denyTabCompletion()
             .description("Reward all scores")
             .senderCaller(this::scoreReward);
@@ -65,7 +69,7 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
         final GameplayType type = args.length >= 1
             ? CommandArgCompleter.requireEnum(GameplayType.class, args[0])
             : null;
-        final Game game = new Game(plugin, "test");
+        final Game game = new Game(plugin, "AdminCommand");
         if (type != null) {
             game.setMode(type.createGameplayMode(game));
         }
@@ -107,6 +111,19 @@ public final class BuildMyThingAdminCommand extends AbstractCommand<BuildMyThing
         }
         sender.sendMessage(textOfChildren(text("Event mode: ", YELLOW),
                                           (plugin.getTag().isEvent()
+                                           ? text("Yes", GREEN)
+                                           : text("No", RED))));
+        return true;
+    }
+
+    private boolean pause(CommandSender sender, String[] args) {
+        if (args.length > 1) return false;
+        if (args.length == 1) {
+            plugin.getTag().setPause(CommandArgCompleter.requireBoolean(args[0]));
+            plugin.saveTag();
+        }
+        sender.sendMessage(textOfChildren(text("Pause mode: ", YELLOW),
+                                          (plugin.getTag().isPause()
                                            ? text("Yes", GREEN)
                                            : text("No", RED))));
         return true;

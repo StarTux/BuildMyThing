@@ -4,6 +4,8 @@ import com.cavetale.buildmything.mode.GameplayMode;
 import com.cavetale.buildmything.mode.GameplayType;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
+import com.cavetale.core.event.minigame.MinigameMatchCompleteEvent;
+import com.cavetale.core.event.minigame.MinigameMatchType;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.winthier.creative.BuildWorld;
@@ -68,6 +70,7 @@ public final class Game {
     @Setter private GameplayMode mode;
     private final Map<UUID, GamePlayer> players = new HashMap<>();
     @Setter private boolean buildingAllowed;
+    private boolean completed;
     @Setter private boolean finished;
     private GameRegion spawnRegion;
     /**
@@ -267,6 +270,14 @@ public final class Game {
         return null;
     }
 
+    public static Game of(Player player) {
+        final UUID uui = player.getUniqueId();
+        for (Game game : buildMyThingPlugin().getGames()) {
+            if (game.isPlaying(player)) return game;
+        }
+        return null;
+    }
+
     public void onPlayerHud(PlayerHudEvent event) {
         final Player player = event.getPlayer();
         final List<Component> sidebar = new ArrayList<>();
@@ -325,5 +336,15 @@ public final class Game {
             if (buildArea.getArea().contains(block)) return buildArea;
         }
         return null;
+    }
+
+    public void onCompleteGame() {
+        if (completed) return;
+        completed = true;
+        final MinigameMatchCompleteEvent event = new MinigameMatchCompleteEvent(MinigameMatchType.BUILD_MY_THING);
+        for (GamePlayer gp : getPlayingGamePlayers()) {
+            if (gp.isDidBuild()) event.addPlayerUuid(gp.getUuid());
+        }
+        event.callEvent();
     }
 }
