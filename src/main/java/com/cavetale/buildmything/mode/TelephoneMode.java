@@ -310,7 +310,7 @@ public final class TelephoneMode implements GameplayMode {
         case SUGGEST:
             return BossBar.bossBar(text("Choose a world", LIGHT_PURPLE), timed.getProgress(), BossBar.Color.PURPLE, BossBar.Overlay.PROGRESS);
         case GUESS:
-            return BossBar.bossBar(text("Guess the build world", LIGHT_PURPLE), timed.getProgress(), BossBar.Color.PURPLE, BossBar.Overlay.PROGRESS);
+            return BossBar.bossBar(text("Guess this build", LIGHT_PURPLE), timed.getProgress(), BossBar.Color.PURPLE, BossBar.Overlay.PROGRESS);
         case BUILD:
             return BossBar.bossBar(textOfChildren(text(tiny("build "), DARK_GRAY), text(gp.getBuildArea().getItemName(), GREEN)),
                                    timed.getProgress(), BossBar.Color.GREEN, BossBar.Overlay.PROGRESS);
