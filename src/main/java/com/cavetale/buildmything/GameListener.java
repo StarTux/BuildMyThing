@@ -22,6 +22,7 @@ import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -195,5 +196,17 @@ public final class GameListener implements Listener {
         if (Game.in(event.getTarget().getWorld()) != null) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onPlayerDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        final Game game = Game.in(player.getWorld());
+        if (game == null) return;
+        event.setCancelled(true);
+        if (event.getCause() != EntityDamageEvent.DamageCause.VOID) {
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, () -> game.onPlayerVoidDamage(player));
     }
 }

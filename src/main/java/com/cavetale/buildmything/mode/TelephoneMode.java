@@ -232,6 +232,7 @@ public final class TelephoneMode implements GameplayMode {
                 final GamePlayer gp = chain.nextPlayer();
                 gamePlayerList.add(gp);
                 chain.currentArea.setGuessingPlayer(gp);
+                gp.setBuildArea(null);
                 gp.setGuessArea(chain.currentArea);
                 buildAreaList.add(chain.currentArea);
             }

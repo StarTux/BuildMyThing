@@ -347,4 +347,23 @@ public final class Game {
         }
         event.callEvent();
     }
+
+    /**
+     * When a player falls in the void, we want to return them to a
+     * proper location.
+     */
+    public void onPlayerVoidDamage(Player player) {
+        final GamePlayer gp = getGamePlayer(player);
+        if (gp != null && gp.isPlaying()) {
+            if (gp.getBuildArea() != null) {
+                gp.getBuildArea().bringBuilder(player);
+            } else if (gp.getGuessArea() != null) {
+                gp.getGuessArea().bringViewer(player);
+            } else {
+                bringPlayer(player);
+            }
+        } else {
+            bringPlayer(player);
+        }
+    }
 }
