@@ -68,7 +68,7 @@ public final class RankingPhase implements GamePhase {
         final Instant now = Instant.now();
         if (pauseTime != null && now.isBefore(pauseTime)) return;
         if (currentBuildArea != null && !guessShown && currentBuildArea.getGuessingPlayer() != null) {
-            pauseTime = now.plus(Duration.ofSeconds(10));
+            pauseTime = now.plus(Duration.ofSeconds(5));
             guessShown = true;
             final Component guess = textOfChildren(text(currentBuildArea.getGuessingPlayer().getName(), WHITE),
                                                    text(" guessed ", GRAY),
@@ -88,7 +88,7 @@ public final class RankingPhase implements GamePhase {
         currentBuildArea = targetAreas.get(buildAreaIndex);
         pauseTime = currentBuildArea.getGuessingPlayer() != null
             ? now.plus(Duration.ofSeconds(5))
-            : now.plus(Duration.ofSeconds(15));
+            : now.plus(Duration.ofSeconds(10));
         final BuildArea origArea = buildAreas.get(buildAreaIndex);
         final int rank = buildAreas.size() - buildAreaIndex;
         final Component rankNumber = Glyph.toComponent("" + rank);
