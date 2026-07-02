@@ -156,9 +156,10 @@ public final class Game {
     private void createWorld() {
         String worldName;
         int suffix = 0;
+        final File worldFolder = Bukkit.getWorlds().get(0).getWorldFolder().getParentFile();
         do {
             worldName = String.format("tmp_%03d", suffix++);
-        } while (new File(Bukkit.getWorldContainer(), worldName).exists());
+        } while (new File(worldFolder, worldName).exists());
         plugin.getLogger().info("[" + name + "] Creating world " + worldName);
         final WorldCreator creator = WorldCreator.name(worldName);
         creator.generator("VoidGenerator");
